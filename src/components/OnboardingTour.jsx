@@ -12,7 +12,7 @@ const STEPS = [
   },
   {
     title: 'Choose your pool tier',
-    body: 'Pick how much RF you want to stake. Higher tiers mean bigger prizes — the whole pot is other players\u2019 RF, minus a rake you can see up front.',
+    body: 'Pick how much RF you want to stake. Higher tiers mean bigger prizes: the whole pot is other players\u2019 RF, minus a rake you can see up front.',
     target: '.tier-select',
     position: 'bottom',
   },
@@ -30,7 +30,7 @@ const STEPS = [
   },
   {
     title: 'Your RF balance',
-    body: 'Your $RAREFRIENDS balance shows here. Make sure you have enough RF for your chosen tier, plus a little Robinhood ETH for gas — they\u2019re separate assets.',
+    body: 'Your $RAREFRIENDS balance shows here. Make sure you have enough RF for your chosen tier, plus a little Robinhood ETH for gas. They\u2019re separate assets.',
     target: '.sol-balance-badge',
     position: 'bottom',
   },

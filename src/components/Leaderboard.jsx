@@ -3,7 +3,7 @@ import { getLeaderboard } from '../lib/supabase';
 import { Crown, RefreshCw, Trophy, Gamepad2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const formatWalletFull = (address) => {
-  if (!address) return '—';
+  if (!address) return '-';
   const s = String(address);
   if (s.length <= 12) return s;
   return `${s.slice(0, 6)}....${s.slice(-4)}`;

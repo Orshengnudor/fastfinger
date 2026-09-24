@@ -141,7 +141,7 @@ function GameApp() {
           <span>
             {rejoinMatch.status === 'in_progress'
               ? 'A game is in progress that you are part of!'
-              : `Your match is waiting — ${rejoinMatch.max_players - (rejoinMatch.current_players || 1)} spot${rejoinMatch.max_players - (rejoinMatch.current_players || 1) !== 1 ? 's' : ''} left`}
+              : `Your match is waiting: ${rejoinMatch.max_players - (rejoinMatch.current_players || 1)} spot${rejoinMatch.max_players - (rejoinMatch.current_players || 1) !== 1 ? 's' : ''} left`}
           </span>
           <button onClick={handleRejoin} className="rejoin-btn">
             {rejoinMatch.status === 'in_progress' ? 'Rejoin Game' : 'Continue to Match'}
@@ -158,8 +158,8 @@ function GameApp() {
           <button onClick={() => setActiveView('docs')}>How to Play</button>
           <button onClick={() => setActiveView('docs')}>Terms</button>
           <button onClick={() => setActiveView('docs')}>Privacy</button>
-          <a href="mailto:humblehero89@gmail.com">Contact</a>
-          <a href="https://x.com/1humblehero" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+          <a href="mailto:fastfingerclub@gmail.com">Contact</a>
+          <a href="https://x.com/fastfingerclub" target="_blank" rel="noopener noreferrer">X / Twitter</a>
         </div>
         <div className="footer-copy">
           © {new Date().getFullYear()} FastFinger • Built on Robinhood Chain •{' '}

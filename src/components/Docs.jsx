@@ -37,7 +37,7 @@ export default function Docs({ onBack }) {
               <div className="docs-step-num">1</div>
               <div>
                 <strong>Connect your wallet</strong>
-                <p>Connect any EVM wallet (MetaMask, Rabby, or any WalletConnect wallet) on Robinhood Chain (chain ID 4663). You need $RAREFRIENDS (RF) for the stake and a little Robinhood ETH for gas — they're different assets.</p>
+                <p>Connect any EVM wallet (MetaMask, Rabby, or any WalletConnect wallet) on Robinhood Chain (chain ID 4663). You need $RAREFRIENDS (RF) for the stake and a little Robinhood ETH for gas. They're different assets.</p>
               </div>
             </div>
             <div className="docs-step">
@@ -51,7 +51,7 @@ export default function Docs({ onBack }) {
               <div className="docs-step-num">3</div>
               <div>
                 <strong>Create or join a match</strong>
-                <p>Create a new match and wait for other players, or join an open match. The contract pulls that tier's RF from your wallet via an approval and locks it — the site never holds the tokens.</p>
+                <p>Create a new match and wait for other players, or join an open match. The contract pulls that tier's RF from your wallet via an approval and locks it. The site never holds the tokens.</p>
               </div>
             </div>
             <div className="docs-step">
@@ -60,33 +60,33 @@ export default function Docs({ onBack }) {
                 <strong>Play the game</strong>
                 <p>When all players join (or the host starts early), a 60-second reaction round begins. Click the targets as fast as possible. Different target types give different points:</p>
                 <ul className="docs-target-list">
-                  <li><span className="dot purple" /> Normal — 1× points</li>
-                  <li><span className="dot amber" /> Fast — 2× points (smaller, faster)</li>
-                  <li><span className="dot green" /> Bonus — 3× points (rare, small)</li>
-                  <li><span className="dot red" /> Trap — Avoid! Clicking costs you points</li>
+                  <li><span className="dot purple" /> Normal: 1× points</li>
+                  <li><span className="dot amber" /> Fast: 2× points (smaller, faster)</li>
+                  <li><span className="dot green" /> Bonus: 3× points (rare, small)</li>
+                  <li><span className="dot red" /> Trap: Avoid! Clicking costs you points</li>
                 </ul>
-                <p>Hit targets quickly for PERFECT (100pts), GOOD (60pts), or OK (30pts) bonuses. Build combos for multipliers — every 5 hits in a row adds 0.5× to your score.</p>
+                <p>Hit targets quickly for PERFECT (100pts), GOOD (60pts), or OK (30pts) bonuses. Build combos for multipliers: every 5 hits in a row adds 0.5× to your score.</p>
               </div>
             </div>
             <div className="docs-step">
               <div className="docs-step-num">5</div>
               <div>
                 <strong>Win the prize pool</strong>
-                <p>The player with the highest score wins. If players tie, a rematch starts automatically between the tied players only — everyone else is out. The winner is declared on-chain within seconds of the game ending.</p>
+                <p>The player with the highest score wins. If players tie, a rematch starts automatically between the tied players only. Everyone else is out. The winner is declared on-chain within seconds of the game ending.</p>
               </div>
             </div>
             <div className="docs-step">
               <div className="docs-step-num">6</div>
               <div>
                 <strong>Claim your prize</strong>
-                <p>Winners can claim their RF from the Dashboard page. You receive <strong>90% of the pot</strong> — or <strong>92%</strong> if you own a hardwired Rare Friends Generations NFT (enter its ID when you claim). The rest is burned and streamed to Rare Friends rewards, split evenly. Prizes must be claimed within 7 days.</p>
+                <p>Winners can claim their RF from the Dashboard page. You receive <strong>90% of the pot</strong>, or <strong>92%</strong> if you own a hardwired Rare Friends Generations NFT (enter its ID when you claim). The rest is burned and streamed to Rare Friends rewards, split evenly. Prizes must be claimed within 7 days.</p>
               </div>
             </div>
           </div>
 
           <div className="docs-info-box">
             <Shield size={15} />
-            <p>All entry fees and prize payouts are handled by a smart contract on Robinhood Chain. FastFinger never holds your funds — the contract does. You can verify all transactions on <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer">Blockscout</a>.</p>
+            <p>All entry fees and prize payouts are handled by a smart contract on Robinhood Chain. FastFinger never holds your funds. The contract does. You can verify all transactions on <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener noreferrer">Blockscout</a>.</p>
           </div>
         </Section>
 
@@ -119,7 +119,7 @@ export default function Docs({ onBack }) {
 
           <div className="docs-info-box">
             <Trophy size={15} />
-            <p>A full table multiplies the pot — ten players at Elite stake 10,000 RF, and the winner takes 9,000. Gas (Robinhood ETH) is separate and never part of these numbers.</p>
+            <p>A full table multiplies the pot: ten players at Elite stake 10,000 RF, and the winner takes 9,000. Gas (Robinhood ETH) is separate and never part of these numbers.</p>
           </div>
         </Section>
 
@@ -132,15 +132,15 @@ export default function Docs({ onBack }) {
           </div>
           <div className="docs-info-box">
             <Zap size={15} />
-            <p><strong>Friend bonus:</strong> if the winner owns a hardwired Generations NFT (generation 1 or higher — hardwiring costs as little as 1 RF at Generation 6), the rake drops to 8% and the winner keeps <strong>92%</strong> instead. It's the only way to take a bigger share of the pot, and it gives every hardwired Friend a use outside rarefriends.com.</p>
+            <p><strong>Friend bonus:</strong> if the winner owns a hardwired Generations NFT (generation 1 or higher, hardwiring costs as little as 1 RF at Generation 6), the rake drops to 8% and the winner keeps <strong>92%</strong> instead. It's the only way to take a bigger share of the pot, and it gives every hardwired Friend a use outside rarefriends.com.</p>
           </div>
-          <p className="docs-body-text">Rewards are never minted — they come out of the rake itself, paid to active Genesis and Generations Friends by weight, exactly as described in the Rare Friends economy docs.</p>
+          <p className="docs-body-text">Rewards are never minted. They come out of the rake itself, paid to active Genesis and Generations Friends by weight, exactly as described in the Rare Friends economy docs.</p>
         </Section>
 
         {/* Cancellation */}
         <Section title="↩ Cancellations & Refunds">
           <p className="docs-body-text">If you create a match and no other player joins, you can cancel and get your full RF stake back on-chain. The Cancel & Get Refund button appears in the matchmaking screen and the lobby while you're the only player.</p>
-          <p className="docs-body-text">Once another player joins, the match can't be cancelled and all stakes are locked until a winner is declared. If no winner is declared within 3 days of the table locking — for example if the game never finishes — anyone can trigger a full refund to every player in that match.</p>
+          <p className="docs-body-text">Once another player joins, the match can't be cancelled and all stakes are locked until a winner is declared. If no winner is declared within 3 days of the table locking (for example, if the game never finishes), anyone can trigger a full refund to every player in that match.</p>
           <p className="docs-body-text">Prizes must be claimed within 7 days of the match ending. Unclaimed prizes after 7 days are swept: burned and sent to Rare Friends rewards, the same 50/50 split as an unclaimed sweep, and are not kept by FastFinger.</p>
         </Section>
 
@@ -181,18 +181,18 @@ export default function Docs({ onBack }) {
         <Section title="📬 Contact Us">
           <p className="docs-body-text">Have a question, bug report, or partnership inquiry? Reach out through any of the channels below.</p>
           <div className="docs-contact-cards">
-            <a href="mailto:humblehero89@gmail.com" className="docs-contact-card">
+            <a href="mailto:fastfingerclub@gmail.com" className="docs-contact-card">
               <Mail size={22} />
               <div>
                 <strong>Email</strong>
-                <span>humblehero89@gmail.com</span>
+                <span>fastfingerclub@gmail.com</span>
               </div>
             </a>
-            <a href="https://x.com/1humblehero" target="_blank" rel="noopener noreferrer" className="docs-contact-card">
+            <a href="https://x.com/fastfingerclub" target="_blank" rel="noopener noreferrer" className="docs-contact-card">
               <X size={22} />
               <div>
                 <strong>X</strong>
-                <span>@1humblehero</span>
+                <span>@fastfingerclub</span>
               </div>
             </a>
           </div>

@@ -30,7 +30,7 @@ export default function GameResults({ results, match, onBackToLobby }) {
               <h1>YOU WIN!</h1>
               <p className="prize-won">🏆 {basePayout.toLocaleString()}–{friendPayout.toLocaleString()} RF</p>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                Go to Dashboard to claim — 92% with a hardwired Generations Friend, 90% without
+                Go to Dashboard to claim: 92% with a hardwired Generations Friend, 90% without
               </p>
               <button className="share-win-btn" onClick={() => setShowCard(true)}>
                 🎉 Share Your Win
@@ -82,7 +82,7 @@ export default function GameResults({ results, match, onBackToLobby }) {
               </span>
               <span className="rank-wallet">{formatWallet(p.wallet_address)}</span>
               <span className="rank-score">{p.score} pts</span>
-              <span className="rank-reaction">{p.avg_reaction_time || '—'}ms</span>
+              <span className="rank-reaction">{p.avg_reaction_time || '-'}ms</span>
             </div>
           ))}
         </div>

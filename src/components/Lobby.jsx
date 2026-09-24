@@ -176,7 +176,7 @@ export default function Lobby({ onJoinMatch }) {
         <div className="hero-section">
           <img src="/logo-mark.png" alt="" className="hero-mark pixel-mark" />
           <h1>FastFinger</h1>
-          <p className="hero-subtitle">Skill. Stake. Burn. — on Robinhood Chain</p>
+          <p className="hero-subtitle">Skill. Stake. Burn. On Robinhood Chain.</p>
           <p className="hero-desc">
             Stake $RAREFRIENDS, beat the table in a 60-second reaction round, and
             take the pot. Every match burns RF and funds active Rare Friends.
@@ -217,7 +217,7 @@ export default function Lobby({ onJoinMatch }) {
         <h3><Plus size={17} /> Create Match</h3>
 
         <div className="option-group">
-          <label>Pool Tier — Entry Fee</label>
+          <label>Pool Tier & Entry Fee</label>
           <div className="tier-select">
             {ENTRY_TIERS.map(tier => (
               <button
@@ -270,7 +270,7 @@ export default function Lobby({ onJoinMatch }) {
         </div>
 
         <button className="create-btn" onClick={handleCreate} disabled={creating}>
-          {creating ? (txStatus || 'Creating...') : `Create Match — ${currentTier.rf} RF`}
+          {creating ? (txStatus || 'Creating...') : `Create Match (${currentTier.rf} RF)`}
         </button>
       </div>
 

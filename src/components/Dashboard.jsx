@@ -180,7 +180,7 @@ export default function Dashboard() {
               <div key={match.id} className="claim-card">
                 <div className="claim-info">
                   <div className="claim-match-id">
-                    {tier.icon} {tier.rf} RF Pool — Match #{match.id.slice(0, 8)}
+                    {tier.icon} {tier.rf} RF Pool · Match #{match.id.slice(0, 8)}
                     {match.declare_tx && (
                       <a
                         href={explorerTx(match.declare_tx)}
@@ -220,10 +220,10 @@ export default function Dashboard() {
                     </button>
                   </div>
                   {f.eligible === true && (
-                    <div className="friend-eligible-yes"><Sparkles size={12} /> Eligible — claim will pay 92%</div>
+                    <div className="friend-eligible-yes"><Sparkles size={12} /> Eligible: claim will pay 92%</div>
                   )}
                   {f.eligible === false && (
-                    <div className="friend-eligible-no">Not a hardwired Friend you own — claim will pay 90%</div>
+                    <div className="friend-eligible-no">Not a hardwired Friend you own: claim will pay 90%</div>
                   )}
 
                   {match.finished_at && (
@@ -250,7 +250,7 @@ export default function Dashboard() {
 
       <div className="escrow-explainer">
         <Shield size={13} />
-        RF is held in a Robinhood Chain smart contract. Claiming sends it directly to your wallet on-chain — gas is paid in ETH.
+        RF is held in a Robinhood Chain smart contract. Claiming sends it directly to your wallet on-chain. Gas is paid in ETH.
       </div>
     </div>
   );
