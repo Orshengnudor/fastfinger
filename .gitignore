@@ -8,3 +8,6 @@ build/
 supabase/.temp/.vscode/
 supabase/.temp/
 .env
+.env
+node_modules/
+dist/
