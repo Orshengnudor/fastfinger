@@ -90,8 +90,20 @@ export default function OnboardingTour({ onDone }) {
 
   useEffect(() => {
     if (!visible) return;
-    const r = getElementRect(current.target);
-    setRect(r);
+    const selector = current.target;
+    if (!selector) { setRect(null); return; }
+
+    const el = document.querySelector(selector);
+    if (!el) { setRect(null); return; }
+
+    // The page's height changes as content grows over time (a new section
+    // added above a target, an extra open match in the list, etc.), so a
+    // target that used to sit in view can silently drift off-screen. Always
+    // scroll it into view first, then measure only once that settles, so the
+    // highlight is guaranteed to match what's actually visible.
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = setTimeout(() => setRect(getElementRect(selector)), 350);
+    return () => clearTimeout(t);
   }, [step, visible]);
 
   const handleNext = () => {

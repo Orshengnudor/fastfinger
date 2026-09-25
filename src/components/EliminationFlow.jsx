@@ -364,7 +364,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
             <div className="final-score">{gameState.score} pts</div>
             <div className="sub-text">Confirming the result on-chain...</div>
             <div className="sub-text" style={{ fontSize: '0.72rem', opacity: 0.7, marginTop: '0.3rem' }}>
-              Usually within about 5 minutes
+              Usually within about 160 secs
             </div>
           </div>
         )}

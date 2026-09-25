@@ -20,6 +20,13 @@ export default function WinShareCard({ results, match, onClose }) {
   const tier = getTierByIndex(match?.tier ?? 0);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+  const triggerDownload = (url) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fastfinger-win-${Date.now()}.png`;
+    a.click();
+  };
+
   // ─── Render the card to a PNG ─────────────────────────────────────────────
   const renderCard = async () => {
     setPhase('rendering');
@@ -35,6 +42,12 @@ export default function WinShareCard({ results, match, onClose }) {
       const dataUrl = canvas.toDataURL('image/png');
       setImgSrc(dataUrl);
       setPhase('image');
+      // Attempt a real download immediately. Most Android browsers honor this
+      // and save straight to the Downloads folder; some mobile browsers
+      // (notably iOS Safari) don't reliably support downloading a data URL,
+      // which is exactly why the image stays shown with a long-press hint
+      // right after this as a fallback that works everywhere regardless.
+      triggerDownload(dataUrl);
     } catch (err) {
       console.error('Render failed:', err);
       setPhase('card');
@@ -54,10 +67,7 @@ export default function WinShareCard({ results, match, onClose }) {
         url = canvas.toDataURL('image/png');
       } catch { return; }
     }
-    const a  = document.createElement('a');
-    a.href   = url;
-    a.download = `fastfinger-win-${Date.now()}.png`;
-    a.click();
+    triggerDownload(url);
   };
 
   // ─── Text share / clipboard ────────────────────────────────────────────────
@@ -102,7 +112,7 @@ export default function WinShareCard({ results, match, onClose }) {
               <span className="wsc-trophy-icon">🏆</span>
             </div>
             <div className="wsc-headline">WINNER</div>
-            <div className="wsc-subhead">on Robinhood Chain</div>
+            <div className="wsc-subhead">Kudos Rare Friend!</div>
             <div className="wsc-prize-box">
               <div className="wsc-prize-label">PRIZE WON</div>
               <div className="wsc-prize-amount">{basePayout.toLocaleString()}–{friendPayout.toLocaleString()} RF</div>
@@ -172,7 +182,7 @@ export default function WinShareCard({ results, match, onClose }) {
               </button>
             ) : (
               <button className="wsc-btn wsc-btn-download" onClick={renderCard} disabled={phase === 'rendering'}>
-                {phase === 'rendering' ? '⏳ Rendering...' : '🖼 Get Image'}
+                {phase === 'rendering' ? '⏳ Rendering...' : '⬇ Download Image'}
               </button>
             )
           ) : (

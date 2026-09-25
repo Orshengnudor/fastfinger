@@ -311,7 +311,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
             <div className="final-score">{gameState.score} pts</div>
             <div className="sub-text">Calculating results...</div>
             <div className="sub-text" style={{ fontSize: '0.72rem', opacity: 0.7, marginTop: '0.3rem' }}>
-              Winners are confirmed on-chain within about 5 minutes
+              Winners are confirmed on-chain within about 160 secs
             </div>
           </div>
         )}
