@@ -72,14 +72,14 @@ export default function Docs({ onBack }) {
               <div className="docs-step-num">5</div>
               <div>
                 <strong>Win the prize pool</strong>
-                <p>The player with the highest score wins. If players tie, a rematch starts automatically between the tied players only. Everyone else is out. The winner is declared on-chain within seconds of the game ending.</p>
+                <p>The player with the highest score wins. If two or more players tie, the tiebreak goes to whoever had the faster average reaction time, decided automatically and immediately. No extra round is needed. The winner is usually declared on-chain within a couple of minutes of the game ending.</p>
               </div>
             </div>
             <div className="docs-step">
               <div className="docs-step-num">6</div>
               <div>
                 <strong>Claim your prize</strong>
-                <p>Winners can claim their RF from the Dashboard page. You receive <strong>90% of the pot</strong>, or <strong>92%</strong> if you own a hardwired Rare Friends Generations NFT (enter its ID when you claim). The rest is burned and streamed to Rare Friends rewards, split evenly. Prizes must be claimed within 7 days.</p>
+                <p>Winners can claim their RF from the Dashboard page. You receive <strong>90% of the pot</strong>, or <strong>92%</strong> if you own a hardwired Rare Friends Generations NFT (enter its ID when you claim). The rest is currently burned in full; a portion will instead stream to Rare Friends rewards once a real receiver contract is configured. Prizes must be claimed within 7 days.</p>
               </div>
             </div>
           </div>
