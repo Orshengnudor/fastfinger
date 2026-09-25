@@ -1,17 +1,34 @@
 import { useAccount } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
-import { Trophy, Sun, Moon, LayoutDashboard, Wallet, Zap, Crown } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Trophy, Sun, Moon, LayoutDashboard, Wallet, Zap, Crown, Menu } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { getRfBalance } from '../lib/blockchain';
 
 export default function Header({ activeView, setActiveView, prizePool, isDarkMode, toggleDarkMode }) {
   const { address, isConnected } = useAccount();
   const [rfBalance, setRfBalance] = useState(0);
+  const [showMore, setShowMore] = useState(false);
+  const moreRef = useRef(null);
 
   useEffect(() => {
     if (!address) return;
     getRfBalance(address).then(setRfBalance);
   }, [address]);
+
+  // Close the mobile "More" dropdown on an outside click.
+  useEffect(() => {
+    if (!showMore) return;
+    const onClick = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setShowMore(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [showMore]);
+
+  const goTo = (view) => {
+    setActiveView(view);
+    setShowMore(false);
+  };
 
   return (
     <header className="game-header">
@@ -28,35 +45,68 @@ export default function Header({ activeView, setActiveView, prizePool, isDarkMod
       <nav className="header-nav">
         <button
           className={`nav-btn ${activeView === 'lobby' ? 'active' : ''}`}
-          onClick={() => setActiveView('lobby')}
+          onClick={() => goTo('lobby')}
         >
           Lobby
         </button>
         <button
           className={`nav-btn ${activeView === 'practice' ? 'active' : ''}`}
-          onClick={() => setActiveView('practice')}
+          onClick={() => goTo('practice')}
         >
           <Zap size={14} /> Practice
         </button>
         <button
           data-tour="dashboard-btn"
           className={`nav-btn ${activeView === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveView('dashboard')}
+          onClick={() => goTo('dashboard')}
         >
           <LayoutDashboard size={14} /> Dashboard
         </button>
-        <button
-          className={`nav-btn ${activeView === 'leaderboard' ? 'active' : ''}`}
-          onClick={() => setActiveView('leaderboard')}
-        >
-          <Trophy size={14} /> Ranks
-        </button>
-        <button
-          className={`nav-btn ${activeView === 'season' ? 'active' : ''}`}
-          onClick={() => setActiveView('season')}
-        >
-          <Crown size={14} /> Season
-        </button>
+
+        {/* Ranks/Season: inline on desktop (room for everything), tucked
+            behind a "More" dropdown on mobile — which of the two shows is
+            purely CSS (.nav-desktop-extra / .nav-more), no JS breakpoint
+            detection needed. */}
+        <span className="nav-desktop-extra">
+          <button
+            className={`nav-btn ${activeView === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => goTo('leaderboard')}
+          >
+            <Trophy size={14} /> Ranks
+          </button>
+          <button
+            className={`nav-btn ${activeView === 'season' ? 'active' : ''}`}
+            onClick={() => goTo('season')}
+          >
+            <Crown size={14} /> Season
+          </button>
+        </span>
+
+        <div className="nav-more" ref={moreRef}>
+          <button
+            className={`nav-btn nav-more-btn ${activeView === 'leaderboard' || activeView === 'season' ? 'active' : ''}`}
+            onClick={() => setShowMore(v => !v)}
+            aria-label="More"
+          >
+            <Menu size={14} /> More
+          </button>
+          {showMore && (
+            <div className="nav-more-dropdown">
+              <button
+                className={`nav-more-item ${activeView === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => goTo('leaderboard')}
+              >
+                <Trophy size={14} /> Ranks
+              </button>
+              <button
+                className={`nav-more-item ${activeView === 'season' ? 'active' : ''}`}
+                onClick={() => goTo('season')}
+              >
+                <Crown size={14} /> Season
+              </button>
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="header-right">

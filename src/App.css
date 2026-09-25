@@ -137,6 +137,58 @@
   gap: 0.75rem;
 }
 
+/* Ranks/Season: plain inline group on desktop (matches other nav-btns) —
+   the mobile media query below hides this and shows .nav-more instead. */
+.nav-desktop-extra {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* "More" dropdown: hidden entirely on desktop, where .nav-desktop-extra
+   already shows Ranks/Season inline — there's nothing to collapse there. */
+.nav-more {
+  display: none;
+  position: relative;
+}
+
+.nav-more-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+  z-index: 200;
+}
+
+.nav-more-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.nav-more-item:hover, .nav-more-item.active {
+  background: hsla(265, 60%, 40%, 0.2);
+  color: var(--text-primary);
+}
+
 .prize-badge {
   background: linear-gradient(135deg, hsla(38, 92%, 50%, 0.2), hsla(38, 92%, 50%, 0.1));
   border: 1px solid hsla(38, 92%, 50%, 0.4);
@@ -1275,6 +1327,16 @@
     order: 3;
     width: 100%;
     justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .nav-desktop-extra {
+    display: none;
+  }
+
+  .nav-more {
+    display: block;
   }
 
   .hero-section h1 {
@@ -2506,6 +2568,11 @@
   .wsc-headline    { font-size: 2rem; }
   .wsc-prize-amount { font-size: 1.6rem; }
   .wsc-stat-val    { font-size: 0.72rem; }
+
+  .nav-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+  }
 }
 
 
