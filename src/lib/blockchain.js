@@ -13,6 +13,8 @@ export const RF_TOKEN_ADDRESS = '0x0779369854d3EcdEA927206718FFD7730C67B71f';
 export const GENERATIONS_ADDRESS = '0x14C49e6118F46525dE9ab41a51cBAA3c6EBF181D';
 
 export const ESCROW_CONTRACT_ADDRESS = import.meta.env.VITE_ESCROW_CONTRACT || null;
+export const ELIMINATION_ESCROW_ADDRESS = import.meta.env.VITE_ELIMINATION_ESCROW || null;
+export const PLAYER_OPTIONS_ELIMINATION = [5, 6, 8, 10];
 
 export const provider = new ethers.JsonRpcProvider(CHAIN.rpcUrl, undefined, { staticNetwork: true });
 
@@ -76,6 +78,23 @@ const ESCROW_ABI = [
   'function tierEntry(uint8 tier) external view returns (uint256)',
 ];
 
+// FastFingerEliminationEscrow — separate contract, no Friend bonus yet, three
+// independent claimants instead of one.
+const ELIMINATION_ABI = [
+  'function createMatch(bytes32 matchId, uint8 tier, uint8 maxPlayers) external',
+  'function joinMatch(bytes32 matchId) external',
+  'function cancelMatch(bytes32 matchId) external',
+  'function claimPrize(bytes32 matchId) external',
+  'function getMatch(bytes32 matchId) external view returns (tuple(address host, uint8 tier, uint8 maxPlayers, uint8 playerCount, uint8 status, uint40 createdAt, uint40 lockedAt, uint40 declaredAt, address first, address second, address third, uint256 firstAmount, uint256 secondAmount, uint256 thirdAmount, uint256 entry))',
+  'function getPlayers(bytes32 matchId) external view returns (address[])',
+  'function tierEntry(uint8 tier) external view returns (uint256)',
+  'function claimed(bytes32 matchId, address account) external view returns (bool)',
+];
+
+export const ELIMINATION_STATUS = [
+  'None', 'Open', 'Locked', 'Declared', 'Cancelled', 'Refunded', 'Swept',
+];
+
 export const MATCH_STATUS = [
   'None', 'Open', 'Locked', 'Declared', 'Paid', 'Cancelled', 'Refunded', 'Swept',
 ];
@@ -98,6 +117,15 @@ const escrow = (signerOrProvider) => {
   if (!ESCROW_CONTRACT_ADDRESS) throw new Error('VITE_ESCROW_CONTRACT not set');
   return new ethers.Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signerOrProvider);
 };
+const eliminationEscrow = (signerOrProvider) => {
+  if (!ELIMINATION_ESCROW_ADDRESS) throw new Error('VITE_ELIMINATION_ESCROW not set');
+  return new ethers.Contract(ELIMINATION_ESCROW_ADDRESS, ELIMINATION_ABI, signerOrProvider);
+};
+// Same tier RF stake, different contract address, chosen by match mode —
+// every on-chain call below takes `mode` for exactly this reason.
+const contractFor = (mode, signerOrProvider) =>
+  mode === 'elimination' ? eliminationEscrow(signerOrProvider) : escrow(signerOrProvider);
+const addressFor = (mode) => (mode === 'elimination' ? ELIMINATION_ESCROW_ADDRESS : ESCROW_CONTRACT_ADDRESS);
 
 let rfDecimalsCache = null;
 const rfDecimals = async () => {
@@ -146,17 +174,20 @@ export const validateEntryBalance = async (address, tierIndex) => {
 // RF requires an ERC-20 approval before the escrow can pull a stake, unlike the
 // old native-ETH `payable` flow. We approve exactly what's needed each time —
 // simple and safe, at the cost of one extra signature per new stake amount.
-const ensureApproval = async (signer, ownerAddress, amountWei) => {
+const ensureApproval = async (signer, ownerAddress, amountWei, mode) => {
+  const spender = addressFor(mode);
   const token = rfToken(signer);
-  const current = await token.allowance(ownerAddress, ESCROW_CONTRACT_ADDRESS);
+  const current = await token.allowance(ownerAddress, spender);
   if (current >= amountWei) return null;
-  const tx = await token.approve(ESCROW_CONTRACT_ADDRESS, amountWei);
+  const tx = await token.approve(spender, amountWei);
   await tx.wait();
   return tx.hash;
 };
 
 // ─── On-chain calls ───────────────────────────────────────────────────────────
-export const createMatchOnChain = async (walletClient, matchId, maxPlayers, tierIndex, onStatus) => {
+// Every call below takes `mode` ('standard' | 'elimination') and routes to the
+// matching contract — the two are entirely separate deployments.
+export const createMatchOnChain = async (walletClient, matchId, maxPlayers, tierIndex, onStatus, mode = 'standard') => {
   try {
     const tier = getTierByIndex(tierIndex);
     const entryWei = await toRfUnits(tier.rf);
@@ -165,10 +196,10 @@ export const createMatchOnChain = async (walletClient, matchId, maxPlayers, tier
     const address = await signer.getAddress();
 
     onStatus?.('Checking RF approval...');
-    await ensureApproval(signer, address, entryWei);
+    await ensureApproval(signer, address, entryWei, mode);
 
     onStatus?.('Staking RF...');
-    const tx = await escrow(signer).createMatch(matchIdBytes32, tier.index, maxPlayers);
+    const tx = await contractFor(mode, signer).createMatch(matchIdBytes32, tier.index, maxPlayers);
     const receipt = await tx.wait();
     return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
   } catch (err) {
@@ -177,7 +208,7 @@ export const createMatchOnChain = async (walletClient, matchId, maxPlayers, tier
   }
 };
 
-export const joinMatchOnChain = async (walletClient, matchId, tierIndex, onStatus) => {
+export const joinMatchOnChain = async (walletClient, matchId, tierIndex, onStatus, mode = 'standard') => {
   try {
     const tier = getTierByIndex(tierIndex);
     const entryWei = await toRfUnits(tier.rf);
@@ -186,10 +217,10 @@ export const joinMatchOnChain = async (walletClient, matchId, tierIndex, onStatu
     const address = await signer.getAddress();
 
     onStatus?.('Checking RF approval...');
-    await ensureApproval(signer, address, entryWei);
+    await ensureApproval(signer, address, entryWei, mode);
 
     onStatus?.('Staking RF...');
-    const tx = await escrow(signer).joinMatch(matchIdBytes32);
+    const tx = await contractFor(mode, signer).joinMatch(matchIdBytes32);
     const receipt = await tx.wait();
     return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
   } catch (err) {
@@ -198,11 +229,11 @@ export const joinMatchOnChain = async (walletClient, matchId, tierIndex, onStatu
   }
 };
 
-export const cancelMatchOnChain = async (walletClient, matchId) => {
+export const cancelMatchOnChain = async (walletClient, matchId, mode = 'standard') => {
   try {
     const matchIdBytes32 = uuidToBytes32(matchId);
     const signer = await walletClientToSigner(walletClient);
-    const tx = await escrow(signer).cancelMatch(matchIdBytes32);
+    const tx = await contractFor(mode, signer).cancelMatch(matchIdBytes32);
     const receipt = await tx.wait();
     return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
   } catch (err) {
@@ -238,6 +269,36 @@ export const claimPrizeOnChain = async (walletClient, matchId, friendId = 0n) =>
   }
 };
 
+// Elimination contract's claimPrize takes no friendId (no Friend bonus in this
+// version — see the contract's own NatSpec for why). 1st/2nd/3rd all use this
+// same call; the contract knows which one you are from your address.
+export const claimEliminationPrizeOnChain = async (walletClient, matchId) => {
+  try {
+    if (!matchId) throw new Error('matchId required');
+    const matchIdBytes32 = uuidToBytes32(matchId);
+    const signer = await walletClientToSigner(walletClient);
+    const contract = eliminationEscrow(signer);
+
+    try {
+      await contract.claimPrize.estimateGas(matchIdBytes32);
+    } catch (gasErr) {
+      const reason = gasErr.reason || gasErr.shortMessage || '';
+      if (/NotAPlacer/i.test(reason)) throw new Error('You did not place in the top 3 of this match.');
+      if (/NotDeclared/i.test(reason)) throw new Error('Results not declared yet — try again shortly.');
+      if (/AlreadyClaimed/i.test(reason)) throw new Error('You already claimed this prize.');
+      if (/ClaimWindowClosed/i.test(reason)) throw new Error('The 7-day claim window has closed.');
+      throw new Error(reason || 'Contract rejected the claim.');
+    }
+
+    const tx = await contract.claimPrize(matchIdBytes32);
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('claimEliminationPrizeOnChain failed:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 // ─── Reads ────────────────────────────────────────────────────────────────────
 export const getMatchOnChain = async (matchId) => {
   try {
@@ -255,6 +316,53 @@ export const getMatchOnChain = async (matchId) => {
     console.error('getMatchOnChain failed:', err);
     return null;
   }
+};
+
+export const getEliminationMatchOnChain = async (matchId) => {
+  try {
+    const m = await eliminationEscrow(provider).getMatch(uuidToBytes32(matchId));
+    return {
+      host: m.host,
+      tier: Number(m.tier),
+      maxPlayers: Number(m.maxPlayers),
+      playerCount: Number(m.playerCount),
+      status: ELIMINATION_STATUS[Number(m.status)],
+      first: m.first,
+      second: m.second,
+      third: m.third,
+      firstAmount: await fromRfUnits(m.firstAmount),
+      secondAmount: await fromRfUnits(m.secondAmount),
+      thirdAmount: await fromRfUnits(m.thirdAmount),
+      entry: await fromRfUnits(m.entry),
+    };
+  } catch (err) {
+    console.error('getEliminationMatchOnChain failed:', err);
+    return null;
+  }
+};
+
+// Mirrors FastFingerEliminationEscrow's flat split exactly (9000 bps
+// distributable, then 60/25/15) — for showing payouts before results exist.
+export const ELIMINATION_DISTRIBUTABLE_BPS = 9000;
+export const ELIMINATION_FIRST_BPS = 6000;
+export const ELIMINATION_SECOND_BPS = 2500;
+export const ELIMINATION_THIRD_BPS = 1500;
+
+export const previewEliminationSplit = (potRf) => {
+  const distributable = (potRf * ELIMINATION_DISTRIBUTABLE_BPS) / 10_000;
+  const first = (distributable * ELIMINATION_FIRST_BPS) / 10_000;
+  const second = (distributable * ELIMINATION_SECOND_BPS) / 10_000;
+  const third = distributable - first - second;
+  return { first, second, third, burn: potRf - distributable };
+};
+
+// Elimination mode has three independent claimants and no single
+// prize_claimed flag — ask the contract directly whether this address has
+// already claimed their share of this match. Can never drift from reality.
+export const checkEliminationClaimed = async (matchId, address) => {
+  if (!matchId || !address) return false;
+  try { return await eliminationEscrow(provider).claimed(uuidToBytes32(matchId), address); }
+  catch { return false; }
 };
 
 // Checks a Friend the contract will actually accept for the 92% bonus: owned by

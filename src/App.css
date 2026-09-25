@@ -277,10 +277,44 @@
 .create-match-card h3 {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   font-size: 1rem;
   margin-bottom: 1rem;
   color: var(--accent);
+}
+
+/* Standard/Elimination mode toggle — separate from .player-opt because that
+   one is a fixed 36px square built for single-digit player counts; this needs
+   to fit "Standard"/"Elimination" text plus an icon without overflowing. */
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mode-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex: 1 1 auto;
+}
+
+.mode-opt:hover, .mode-opt.active {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: var(--primary);
+  color: var(--text-primary);
 }
 
 .create-options {

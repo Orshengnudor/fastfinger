@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { getClaimableWins, markPrizeClaimed, recordRfWin } from '../lib/supabase';
+import { getClaimableWins, markPrizeClaimed, recordRfWin, getClaimableEliminationMatches } from '../lib/supabase';
 import {
   formatWallet,
   claimPrizeOnChain,
+  claimEliminationPrizeOnChain,
   checkFriendEligible,
+  checkEliminationClaimed,
   previewSplit,
+  previewEliminationSplit,
   getRfBalance,
   getTierByIndex,
   explorerTx,
 } from '../lib/blockchain';
 import {
   Trophy, Gift, Clock, CheckCircle, Sparkles,
-  ExternalLink, Wallet, AlertCircle, Shield, Search,
+  ExternalLink, Wallet, AlertCircle, Shield, Search, Swords,
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -20,6 +23,7 @@ export default function Dashboard() {
   const { data: walletClient }   = useWalletClient();
 
   const [claimable,  setClaimable]  = useState([]);
+  const [elimClaimable, setElimClaimable] = useState([]);
   const [claiming,   setClaiming]   = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
@@ -31,6 +35,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (address) {
       loadClaimable();
+      loadElimClaimable();
       getRfBalance(address).then(setRfBalance);
     }
   }, [address]);
@@ -44,6 +49,20 @@ export default function Dashboard() {
       console.error('Failed to load claimable:', err);
     }
     setLoading(false);
+  };
+
+  // Elimination mode has no single prize_claimed flag (three independent
+  // claimants), so "already claimed" is checked on-chain per match, per place.
+  const loadElimClaimable = async () => {
+    try {
+      const matches = await getClaimableEliminationMatches(address);
+      const withStatus = await Promise.all(
+        matches.map(async m => ({ ...m, alreadyClaimed: await checkEliminationClaimed(m.id, address) }))
+      );
+      setElimClaimable(withStatus.filter(m => !m.alreadyClaimed));
+    } catch (err) {
+      console.error('Failed to load elimination claimable:', err);
+    }
   };
 
   const friendFor = (matchId) => friendState[matchId] || { value: '', checking: false, eligible: null };
@@ -99,6 +118,48 @@ export default function Dashboard() {
     setClaiming(null);
   };
 
+  const myElimPlace = (match) => {
+    if (match.winner_wallet === address) return { place: 1, key: 'first' };
+    if (match.runner_up === address) return { place: 2, key: 'second' };
+    if (match.elim_third === address) return { place: 3, key: 'third' };
+    return { place: null, key: null };
+  };
+
+  const handleClaimElimination = async (match) => {
+    if (!walletClient || !address) return;
+    setError('');
+    setClaiming(match.id);
+    setTxStatus(prev => ({ ...prev, [match.id]: 'Confirm the claim in your wallet...' }));
+
+    try {
+      const result = await claimEliminationPrizeOnChain(walletClient, match.id);
+      if (!result.success) {
+        setError(result.error || 'Claim failed. Please try again.');
+        setClaiming(null);
+        setTxStatus(prev => ({ ...prev, [match.id]: '' }));
+        return;
+      }
+
+      const pool = parseFloat(match.prize_pool || 0);
+      const split = previewEliminationSplit(pool);
+      const { key } = myElimPlace(match);
+      const payout = split[key] || 0;
+
+      setTxStatus(prev => ({
+        ...prev,
+        [match.id]: `Claimed ${payout.toLocaleString()} RF! TX: ${result.txId?.slice(0, 10)}...`,
+      }));
+
+      await recordRfWin(address, payout);
+      getRfBalance(address).then(setRfBalance);
+      await loadElimClaimable();
+    } catch (err) {
+      setError(err.message);
+    }
+
+    setClaiming(null);
+  };
+
   if (!isConnected) {
     return (
       <div className="dashboard">
@@ -113,7 +174,12 @@ export default function Dashboard() {
   const totalClaimableRf = claimable.reduce((sum, m) => {
     const { payout } = previewSplit(parseFloat(m.prize_pool || 0), false);
     return sum + payout;
+  }, 0) + elimClaimable.reduce((sum, m) => {
+    const split = previewEliminationSplit(parseFloat(m.prize_pool || 0));
+    const { key } = myElimPlace(m);
+    return sum + (split[key] || 0);
   }, 0);
+  const totalClaimCount = claimable.length + elimClaimable.length;
 
   return (
     <div className="dashboard">
@@ -146,7 +212,7 @@ export default function Dashboard() {
       <div className="dashboard-summary">
         <div className="summary-card">
           <Gift size={18} />
-          <span className="summary-val">{claimable.length}</span>
+          <span className="summary-val">{totalClaimCount}</span>
           <span className="summary-lbl">Prizes to Claim</span>
         </div>
         <div className="summary-card highlight">
@@ -159,13 +225,13 @@ export default function Dashboard() {
       {/* Claimable Prizes */}
       {loading ? (
         <div className="no-data"><p>Loading prizes...</p></div>
-      ) : claimable.length === 0 ? (
+      ) : claimable.length === 0 && elimClaimable.length === 0 ? (
         <div className="no-data">
           <Trophy size={32} style={{ opacity: 0.2, marginBottom: '0.75rem' }} />
           <p>No prizes to claim yet.</p>
           <p style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Win a match to earn RF!</p>
         </div>
-      ) : (
+      ) : claimable.length > 0 && (
         <div className="claim-list">
           <h3 className="claim-section-title">Unclaimed Prizes</h3>
           {claimable.map(match => {
@@ -182,13 +248,7 @@ export default function Dashboard() {
                   <div className="claim-match-id">
                     {tier.icon} {tier.rf} RF Pool · Match #{match.id.slice(0, 8)}
                     {match.declare_tx && (
-                      <a
-                        href={explorerTx(match.declare_tx)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="explorer-link"
-                        title="View on Blockscout"
-                      >
+                      <a href={explorerTx(match.declare_tx)} target="_blank" rel="noopener noreferrer" className="explorer-link" title="View on Blockscout">
                         <ExternalLink size={11} />
                       </a>
                     )}
@@ -236,6 +296,56 @@ export default function Dashboard() {
                 <button
                   className="claim-btn"
                   onClick={() => handleClaim(match)}
+                  disabled={claiming === match.id}
+                >
+                  {claiming === match.id
+                    ? 'Claiming...'
+                    : <><CheckCircle size={14} /> Claim {payout.toLocaleString()} RF</>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Elimination Prizes — three independent claimants, no Friend bonus yet */}
+      {elimClaimable.length > 0 && (
+        <div className="claim-list" style={{ marginTop: '1.5rem' }}>
+          <h3 className="claim-section-title"><Swords size={15} style={{ verticalAlign: 'middle' }} /> Elimination Prizes</h3>
+          {elimClaimable.map(match => {
+            const pool      = parseFloat(match.prize_pool || 0);
+            const tier      = getTierByIndex(match.tier ?? 0);
+            const statusMsg = txStatus[match.id];
+            const split     = previewEliminationSplit(pool);
+            const { place, key } = myElimPlace(match);
+            const payout    = split[key] || 0;
+            const placeLabel = place === 1 ? '1st' : place === 2 ? '2nd' : '3rd';
+
+            return (
+              <div key={match.id} className="claim-card">
+                <div className="claim-info">
+                  <div className="claim-match-id">
+                    {tier.icon} {tier.rf} RF Pool · {placeLabel} place · Match #{match.id.slice(0, 8)}
+                    {match.declare_tx && (
+                      <a href={explorerTx(match.declare_tx)} target="_blank" rel="noopener noreferrer" className="explorer-link" title="View on Blockscout">
+                        <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
+                  <div className="claim-details">
+                    <span>Prize pool: <strong>{pool.toLocaleString()} RF</strong></span>
+                    <span>Your share ({placeLabel}, {place === 1 ? '60%' : place === 2 ? '25%' : '15%'} of 90%): <strong>{payout.toLocaleString()} RF</strong></span>
+                  </div>
+                  {match.finished_at && (
+                    <div className="claim-date">
+                      <Clock size={11} /> {new Date(match.finished_at).toLocaleString()}
+                    </div>
+                  )}
+                  {statusMsg && <div className="claim-tx-status">{statusMsg}</div>}
+                </div>
+                <button
+                  className="claim-btn"
+                  onClick={() => handleClaimElimination(match)}
                   disabled={claiming === match.id}
                 >
                   {claiming === match.id

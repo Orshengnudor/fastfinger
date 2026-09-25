@@ -3,10 +3,13 @@ import { useAccount } from 'wagmi';
 import WalletProvider from './components/WalletProvider';
 import Header from './components/Header';
 import Lobby from './components/Lobby';
+import PracticeMode from './components/PracticeMode';
 import Matchmaking from './components/Matchmaking';
 import GamePlay from './components/GamePlay';
+import EliminationFlow from './components/EliminationFlow';
 import GameResults from './components/GameResults';
 import Leaderboard from './components/Leaderboard';
+import SeasonPool from './components/SeasonPool';
 import Dashboard from './components/Dashboard';
 import Docs from './components/Docs';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
@@ -42,7 +45,7 @@ function GameApp() {
   // the user is not already in matchmaking or game view.
   useEffect(() => {
     if (!address || !isConnected) { setRejoinMatch(null); return; }
-    if (activeView === 'matchmaking' || activeView === 'game') return;
+    if (activeView === 'matchmaking' || activeView === 'game' || activeView === 'results') return;
 
     getMyActiveMatch(address).then(m => {
       if (!m) { setRejoinMatch(null); return; }
@@ -84,7 +87,8 @@ function GameApp() {
     setGameResults(results);
     setActiveView('results');
     if (address) {
-      await recordGameResult(address, results.winner === address);
+      const won = results.mode === 'elimination' ? results.place === 1 : results.winner === address;
+      await recordGameResult(address, won);
     }
   };
 
@@ -109,8 +113,11 @@ function GameApp() {
   const renderView = () => {
     switch (activeView) {
       case 'lobby':       return <Lobby onJoinMatch={handleJoinMatch} />;
+      case 'practice':    return <PracticeMode onBack={() => setActiveView('lobby')} />;
       case 'matchmaking': return <Matchmaking match={currentMatch} onGameStart={handleGameStart} onLeave={handleLeaveMatch} />;
-      case 'game':        return <GamePlay match={currentMatch} players={matchPlayers} onGameEnd={handleGameEnd} />;
+      case 'game':        return currentMatch?.mode === 'elimination'
+        ? <EliminationFlow match={currentMatch} players={matchPlayers} onGameEnd={handleGameEnd} />
+        : <GamePlay match={currentMatch} players={matchPlayers} onGameEnd={handleGameEnd} />;
       case 'results':
         return (
           <GameResults
@@ -120,6 +127,7 @@ function GameApp() {
           />
         );
       case 'leaderboard': return <Leaderboard />;
+      case 'season':      return <SeasonPool />;
       case 'dashboard':   return <Dashboard />;
       default:            return <Lobby onJoinMatch={handleJoinMatch} />;
     }
@@ -136,7 +144,7 @@ function GameApp() {
       />
 
       {/* Rejoin banner — only shown when user has an active unfinished match */}
-      {rejoinMatch && activeView !== 'matchmaking' && activeView !== 'game' && (
+      {rejoinMatch && activeView !== 'matchmaking' && activeView !== 'game' && activeView !== 'results' && (
         <div className="rejoin-banner">
           <span>
             {rejoinMatch.status === 'in_progress'

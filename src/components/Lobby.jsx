@@ -3,11 +3,11 @@ import { useAccount, useWalletClient } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
 import { getOpenMatches, createMatch, joinMatch, subscribeToLobby, supabase } from '../lib/supabase';
 import {
-  formatWallet, getRfBalance, getEthBalance, validateEntryBalance, previewSplit,
+  formatWallet, getRfBalance, getEthBalance, validateEntryBalance, previewSplit, previewEliminationSplit,
   createMatchOnChain, joinMatchOnChain, cancelMatchOnChain,
-  ENTRY_TIERS, getTierByIndex, PLAYER_OPTIONS,
+  ENTRY_TIERS, getTierByIndex, PLAYER_OPTIONS, PLAYER_OPTIONS_ELIMINATION,
 } from '../lib/blockchain';
-import { Users, Zap, Plus, ArrowRight, Shield, Wallet, AlertCircle, Flame, RefreshCw, XCircle } from 'lucide-react';
+import { Users, Zap, Plus, ArrowRight, Shield, Wallet, AlertCircle, Flame, RefreshCw, XCircle, Swords } from 'lucide-react';
 
 export default function Lobby({ onJoinMatch }) {
   const { address, isConnected } = useAccount();
@@ -17,6 +17,7 @@ export default function Lobby({ onJoinMatch }) {
   const [creating,     setCreating]     = useState(false);
   const [joining,      setJoining]      = useState(null);
   const [cancelling,   setCancelling]   = useState(null);
+  const [mode,         setMode]         = useState('standard'); // 'standard' | 'elimination'
   const [maxPlayers,   setMaxPlayers]   = useState(2);
   const [selectedTier, setSelectedTier] = useState(0);
   const [rfBalance,    setRfBalance]    = useState(0);
@@ -30,6 +31,17 @@ export default function Lobby({ onJoinMatch }) {
   const pool = currentTier.rf * maxPlayers;
   const { payout } = previewSplit(pool, false);
   const { payout: friendPayout } = previewSplit(pool, true);
+  const elimSplit = previewEliminationSplit(pool);
+  const playerOptions = mode === 'elimination' ? PLAYER_OPTIONS_ELIMINATION : PLAYER_OPTIONS;
+
+  const handleModeChange = (next) => {
+    setMode(next);
+    // Elimination only exists for 5+ tables — jump to the smallest valid one
+    // rather than leaving a now-invalid player count selected.
+    if (next === 'elimination' && !PLAYER_OPTIONS_ELIMINATION.includes(maxPlayers)) {
+      setMaxPlayers(PLAYER_OPTIONS_ELIMINATION[0]);
+    }
+  };
 
   const loadMatches = useCallback(async () => {
     try {
@@ -83,7 +95,7 @@ export default function Lobby({ onJoinMatch }) {
       }
 
       const matchId = crypto.randomUUID();
-      const result = await createMatchOnChain(walletClient, matchId, maxPlayers, selectedTier, setTxStatus);
+      const result = await createMatchOnChain(walletClient, matchId, maxPlayers, selectedTier, setTxStatus, mode);
       if (!result.success) {
         setError(result.error || 'Transaction failed.');
         setCreating(false);
@@ -92,7 +104,7 @@ export default function Lobby({ onJoinMatch }) {
       }
 
       setTxStatus('Creating match record...');
-      const match = await createMatch(address, currentTier.rf, maxPlayers, selectedTier, matchId);
+      const match = await createMatch(address, currentTier.rf, maxPlayers, selectedTier, matchId, mode);
       setTxStatus('Match created! ✅');
       setTimeout(() => setTxStatus(''), 2500);
       refreshBalances();
@@ -119,7 +131,7 @@ export default function Lobby({ onJoinMatch }) {
         return;
       }
 
-      const result = await joinMatchOnChain(walletClient, match.id, tierIndex, setTxStatus);
+      const result = await joinMatchOnChain(walletClient, match.id, tierIndex, setTxStatus, match.mode || 'standard');
       if (!result.success) {
         setError(result.error || 'Transaction failed.');
         setJoining(null);
@@ -147,12 +159,12 @@ export default function Lobby({ onJoinMatch }) {
   // Cancelling a solo match must release the on-chain stake, not just flip the
   // Supabase row — otherwise the RF stays locked in the escrow with nothing to
   // show it in the lobby.
-  const handleCancel = async (matchId) => {
+  const handleCancel = async (match) => {
     if (!address || !walletClient) return;
-    setCancelling(matchId);
+    setCancelling(match.id);
     setError('');
     try {
-      const result = await cancelMatchOnChain(walletClient, matchId);
+      const result = await cancelMatchOnChain(walletClient, match.id, match.mode || 'standard');
       if (!result.success) {
         setError(result.error || 'Cancellation failed.');
         setCancelling(null);
@@ -160,7 +172,7 @@ export default function Lobby({ onJoinMatch }) {
       }
       await supabase.from('matches')
         .update({ status: 'cancelled' })
-        .eq('id', matchId)
+        .eq('id', match.id)
         .eq('host_wallet', address);
       refreshBalances();
       await loadMatches();
@@ -188,7 +200,7 @@ export default function Lobby({ onJoinMatch }) {
             <div className="feature-card"><Shield size={22} /><span>Smart Contract</span></div>
           </div>
           <div className="points-notice">
-            🔥 Hold a hardwired Generations Friend → keep 92% instead of 90%
+            🔥 Hold a hardwired Generations Friend → keep 92% instead of 90% (standard mode)
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
             <ConnectKitButton />
@@ -217,6 +229,23 @@ export default function Lobby({ onJoinMatch }) {
         <h3><Plus size={17} /> Create Match</h3>
 
         <div className="option-group">
+          <label>Match Type</label>
+          <div className="mode-toggle">
+            <button className={`mode-opt ${mode === 'standard' ? 'active' : ''}`} onClick={() => handleModeChange('standard')}>
+              <Zap size={13} /> Standard
+            </button>
+            <button className={`mode-opt ${mode === 'elimination' ? 'active' : ''}`} onClick={() => handleModeChange('elimination')}>
+              <Swords size={13} /> Elimination
+            </button>
+          </div>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+            {mode === 'standard'
+              ? 'One 60s round, highest score takes the whole pot.'
+              : 'Round 1 (5+ players) narrows the field to a final 2 — top 3 overall get paid.'}
+          </p>
+        </div>
+
+        <div className="option-group">
           <label>Pool Tier & Entry Fee</label>
           <div className="tier-select">
             {ENTRY_TIERS.map(tier => (
@@ -236,7 +265,7 @@ export default function Lobby({ onJoinMatch }) {
           <div className="option-group">
             <label>Players</label>
             <div className="player-select">
-              {PLAYER_OPTIONS.map(n => (
+              {playerOptions.map(n => (
                 <button
                   key={n}
                   className={`player-opt ${maxPlayers === n ? 'active' : ''}`}
@@ -257,17 +286,32 @@ export default function Lobby({ onJoinMatch }) {
               🏆 {pool.toLocaleString()} RF
             </div>
           </div>
-          <div className="option-group">
-            <label>Winner Gets</label>
-            <div className="points-preview">
-              {payout.toLocaleString()} RF <span style={{ opacity: 0.6 }}>({friendPayout.toLocaleString()} with a Friend)</span>
+          {mode === 'standard' ? (
+            <div className="option-group">
+              <label>Winner Gets</label>
+              <div className="points-preview">
+                {payout.toLocaleString()} RF <span style={{ opacity: 0.6 }}>({friendPayout.toLocaleString()} with a Friend)</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="option-group">
+              <label>Top 3 Split (60 / 25 / 15)</label>
+              <div className="points-preview">
+                {elimSplit.first.toLocaleString()} / {elimSplit.second.toLocaleString()} / {elimSplit.third.toLocaleString()} RF
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="escrow-notice">
-          🔒 RF locked in a Robinhood Chain smart contract • 10% rake (8% with a hardwired Generations Friend), split evenly between burn and Rare Friends rewards
-        </div>
+        {mode === 'standard' ? (
+          <div className="escrow-notice">
+            🔒 RF locked in a Robinhood Chain smart contract • 10% rake (8% with a hardwired Generations Friend), split evenly between burn and Rare Friends rewards
+          </div>
+        ) : (
+          <div className="escrow-notice">
+            🔒 RF locked in a separate elimination-mode smart contract • 10% rake, burned. No Friend bonus in elimination mode yet.
+          </div>
+        )}
 
         <button className="create-btn" onClick={handleCreate} disabled={creating}>
           {creating ? (txStatus || 'Creating...') : `Create Match (${currentTier.rf} RF)`}
@@ -301,12 +345,18 @@ export default function Lobby({ onJoinMatch }) {
               const matchPool  = tier.rf * joined;
               const isHost     = match.host_wallet === address;
               const alreadyIn  = match.match_players?.some(p => p.wallet_address === address);
+              const isElim     = match.mode === 'elimination';
 
               return (
                 <div key={match.id} className="match-card">
                   <div className="match-info">
                     <div className="match-host">
                       <span className="tier-badge-sm">{tier.icon} {tier.rf} RF</span>
+                      {isElim && (
+                        <span style={{ marginLeft: '6px', fontSize: '11px', background: 'rgba(204,255,0,0.15)', color: 'var(--primary-glow)', padding: '2px 6px', borderRadius: '4px' }}>
+                          <Swords size={10} style={{ verticalAlign: 'middle' }} /> Elimination
+                        </span>
+                      )}
                       {' '}Host: {formatWallet(match.host_wallet)}
                       {isHost && (
                         <span style={{ marginLeft: '8px', fontSize: '11px', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -317,7 +367,7 @@ export default function Lobby({ onJoinMatch }) {
                     <div className="match-details">
                       <span><Users size={13} /> {joined}/{match.max_players}</span>
                       <span className="match-remaining">{remaining} spot{remaining !== 1 ? 's' : ''} left</span>
-                      <span>🏆 {matchPool.toLocaleString()} RF</span>
+                      <span>🏆 {matchPool.toLocaleString()} RF{isElim ? ' (top 3 paid)' : ''}</span>
                     </div>
                     <div className="match-progress-bar">
                       <div
@@ -331,7 +381,7 @@ export default function Lobby({ onJoinMatch }) {
                     {isHost && joined <= 1 && (
                       <button
                         style={{ background: 'rgba(255,0,0,0.15)', color: '#ff6666', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', border: '1px solid rgba(255,0,0,0.2)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        onClick={() => handleCancel(match.id)}
+                        onClick={() => handleCancel(match)}
                         disabled={cancelling === match.id}
                       >
                         <XCircle size={13} /> {cancelling === match.id ? '...' : 'Cancel'}

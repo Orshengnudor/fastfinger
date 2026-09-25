@@ -27,6 +27,7 @@ jobs:
         env:
           ROBINHOOD_RPC: ${{ secrets.ROBINHOOD_RPC }}
           ESCROW_CONTRACT_ADDRESS: ${{ secrets.ESCROW_CONTRACT_ADDRESS }}
+          ELIMINATION_ESCROW_ADDRESS: ${{ secrets.ELIMINATION_ESCROW_ADDRESS }}
           ADMIN_PRIVATE_KEY: ${{ secrets.ADMIN_PRIVATE_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

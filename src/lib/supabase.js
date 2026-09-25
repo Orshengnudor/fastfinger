@@ -34,7 +34,7 @@ export const subscribeToLobby = (onUpdate) => {
 
 // ─── Match Operations ─────────────────────────────────────────────────────────
 
-export const createMatch = async (walletAddress, entryEth, maxPlayers, tier, matchIdOverride) => {
+export const createMatch = async (walletAddress, entryEth, maxPlayers, tier, matchIdOverride, mode = 'standard') => {
   const { data, error } = await supabase
     .from('matches')
     .insert({
@@ -46,6 +46,7 @@ export const createMatch = async (walletAddress, entryEth, maxPlayers, tier, mat
       current_players: 1,
       tier:            tier,
       status:          'waiting',
+      mode,
     })
     .select()
     .single();
@@ -56,6 +57,7 @@ export const createMatch = async (walletAddress, entryEth, maxPlayers, tier, mat
     wallet_address: walletAddress,
     score:          0,
     status:         'joined',
+    round:          1,
   });
   return data;
 };
@@ -81,7 +83,7 @@ export const joinMatch = async (matchId, walletAddress) => {
 
   const { data, error } = await supabase
     .from('match_players')
-    .insert({ match_id: matchId, wallet_address: walletAddress, score: 0, status: 'joined' })
+    .insert({ match_id: matchId, wallet_address: walletAddress, score: 0, status: 'joined', round: 1 })
     .select()
     .single();
   if (error) throw error;
@@ -140,9 +142,17 @@ export const getMyActiveMatch = async (walletAddress) => {
     .select('*')
     .in('id', ids)
     .in('status', ['waiting', 'starting', 'in_progress'])
-    .order('created_at', { ascending: false })
-    .limit(1);
-  return matches?.[0] || null;
+    .order('created_at', { ascending: false });
+
+  // An elimination match past round 1 is only still "active" for this wallet
+  // if they're one of the two finalists — everyone else is fully done, even
+  // though the match itself is still technically in_progress for the finalists.
+  const stillActive = (matches || []).find(m => {
+    if (m.mode !== 'elimination') return true;
+    if (!m.finalist_a) return true; // round 1 hasn't settled yet, everyone's still in
+    return m.finalist_a === walletAddress || m.finalist_b === walletAddress;
+  });
+  return stillActive || null;
 };
 
 export const cancelMatch = async (matchId) => {
@@ -172,37 +182,51 @@ export const getMatch = async (matchId) => {
   return data;
 };
 
-export const getMatchPlayers = async (matchId) => {
-  const { data, error } = await supabase
-    .from('match_players')
-    .select('*')
-    .eq('match_id', matchId)
-    .order('score', { ascending: false });
+export const getMatchPlayers = async (matchId, round = null) => {
+  let query = supabase.from('match_players').select('*').eq('match_id', matchId);
+  if (round !== null) query = query.eq('round', round);
+  const { data, error } = await query.order('score', { ascending: false });
   if (error) throw error;
   return data || [];
 };
 
-export const updatePlayerScore = async (matchId, walletAddress, score, reactionTime) => {
+// Elimination round 2 has no pre-existing row for the two finalists (only
+// round 1 got one at join time), so this upserts on the real unique key
+// (match_id, wallet_address, round) instead of assuming an update will match.
+export const updatePlayerScore = async (matchId, walletAddress, score, reactionTime, status = 'playing', round = 1) => {
   await supabase.from('match_players')
-    .update({ score, avg_reaction_time: reactionTime, status: 'playing' })
-    .eq('match_id', matchId)
-    .eq('wallet_address', walletAddress);
+    .upsert(
+      { match_id: matchId, wallet_address: walletAddress, score, avg_reaction_time: reactionTime, status, round },
+      { onConflict: 'match_id,wallet_address,round' }
+    );
 };
 
-export const finishMatch = async (matchId, winnerWallet) => {
-  const { error } = await supabase.from('matches').update({
-    status:        'finished',
-    winner_wallet: winnerWallet,
-    finished_at:   new Date().toISOString(),
-  }).eq('id', matchId);
-  if (error) throw error;
-};
+// Winner determination moved server-side (scripts/declareWinnersOnce.js), which
+// is the only thing with permission to write winner_wallet/declare_tx — see
+// migration 00000000000000_init.sql. The client only ever reports its own
+// score and waits for the backend to fill in the result.
 
 export const getClaimableWins = async (walletAddress) => {
   const { data, error } = await supabase.from('matches').select('*')
+    .eq('mode', 'standard')
     .eq('winner_wallet', walletAddress)
     .eq('status', 'finished')
     .eq('prize_claimed', false)
+    .order('finished_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+// Elimination mode has three independent claimants, so there's no single
+// prize_claimed boolean per match — whether *this* wallet has already claimed
+// their specific share is checked on-chain instead (see
+// checkEliminationClaimed in blockchain.js), which can never drift from
+// what actually happened the way a Supabase flag could.
+export const getClaimableEliminationMatches = async (walletAddress) => {
+  const { data, error } = await supabase.from('matches').select('*')
+    .eq('mode', 'elimination')
+    .eq('status', 'finished')
+    .or(`winner_wallet.eq.${walletAddress},runner_up.eq.${walletAddress},elim_third.eq.${walletAddress}`)
     .order('finished_at', { ascending: false });
   if (error) throw error;
   return data || [];
@@ -250,4 +274,59 @@ export const getLeaderboard = async () => {
     .order('total_rf_won', { ascending: false }).limit(50);
   if (error) throw error;
   return data || [];
+};
+
+// ─── Seasonal prize pool ──────────────────────────────────────────────────────
+// Funded and paid out manually by the project owner — this is tracking and
+// display only. No RF moves through any of these functions.
+
+export const getCurrentSeason = async () => {
+  const { data, error } = await supabase.from('seasons')
+    .select('*').eq('is_active', true)
+    .order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error;
+  return data;
+};
+
+export const createSeason = async (startsAt, endsAt, poolWallet) => {
+  // Only one active season at a time — close out any currently active one.
+  await supabase.from('seasons').update({ is_active: false }).eq('is_active', true);
+  const { data, error } = await supabase.from('seasons')
+    .insert({ starts_at: startsAt, ends_at: endsAt, pool_wallet: poolWallet, is_active: true })
+    .select().single();
+  if (error) throw error;
+  return data;
+};
+
+// Cumulative in-game score per wallet across every match that finished inside
+// the season window — not RF won, not wins, the raw score total.
+export const getSeasonLeaderboard = async (startsAt, endsAt, limit = 5) => {
+  const { data, error } = await supabase
+    .from('match_players')
+    .select('wallet_address, score, matches!inner(finished_at)')
+    .gte('matches.finished_at', startsAt)
+    .lte('matches.finished_at', endsAt);
+  if (error) throw error;
+
+  const totals = new Map();
+  for (const row of data || []) {
+    totals.set(row.wallet_address, (totals.get(row.wallet_address) || 0) + (row.score || 0));
+  }
+  return [...totals.entries()]
+    .map(([wallet_address, points]) => ({ wallet_address, points }))
+    .sort((a, b) => b.points - a.points)
+    .slice(0, limit);
+};
+
+export const getSeasonPayouts = async (seasonId) => {
+  const { data, error } = await supabase.from('season_payouts')
+    .select('*').eq('season_id', seasonId).order('rank', { ascending: true });
+  if (error) throw error;
+  return data || [];
+};
+
+export const recordSeasonPayout = async (seasonId, rank, walletAddress, amount, txHash) => {
+  const { error } = await supabase.from('season_payouts')
+    .insert({ season_id: seasonId, rank, wallet_address: walletAddress, amount, tx_hash: txHash || null });
+  if (error) throw error;
 };

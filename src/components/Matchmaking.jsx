@@ -146,7 +146,7 @@ export default function Matchmaking({ match, onGameStart, onLeave }) {
     setCancelError('');
     setCancelling(true);
     try {
-      const result = await cancelMatchOnChain(walletClient, match.id);
+      const result = await cancelMatchOnChain(walletClient, match.id, match.mode || 'standard');
       if (!result.success) {
         setCancelError(result.error || 'Cancellation failed.');
         setCancelling(false);
@@ -166,6 +166,11 @@ export default function Matchmaking({ match, onGameStart, onLeave }) {
         <div className="matchmaking-header">
           <div className="mm-tier-badge" style={{ color: 'var(--primary-glow)' }}>
             {tierInfo.icon} {tierInfo.rf} RF Pool
+            {matchData.mode === 'elimination' && (
+              <span style={{ marginLeft: '8px', fontSize: '11px', background: 'rgba(204,255,0,0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                Elimination
+              </span>
+            )}
           </div>
           <h2>Waiting for Players</h2>
           <div className="match-id">Match #{match.id.slice(0, 8)}</div>

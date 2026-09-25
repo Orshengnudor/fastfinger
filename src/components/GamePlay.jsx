@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import { updatePlayerScore, subscribeToMatch, getMatchPlayers, finishMatch, supabase } from '../lib/supabase';
+import { updatePlayerScore, subscribeToMatch, getMatchPlayers, supabase } from '../lib/supabase';
 import { formatWallet } from '../lib/blockchain';
 import {
   createGameState, spawnTarget, hitTarget, removeExpiredTargets,
@@ -28,7 +28,6 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
 
   const AREA_WIDTH  = 320;
   const AREA_HEIGHT = 384;
-  const isHost      = address === match?.host_wallet;
 
   // ─── Sync opponents ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -188,70 +187,60 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
   }, []);
 
   // ─── Game over ────────────────────────────────────────────────────────────
-  // All players end at the same UTC moment so no waiting needed.
-  // Host pushes final score and declares winner.
-  // Non-host pushes final score and waits 3s for host to write winner to DB.
+  // All players end at the same UTC moment so no waiting needed for that part.
+  // The winner itself is decided server-side (scripts/declareWinnersOnce.js),
+  // not here — this just reports the final score and waits for that result.
   const handleGameOver = async (finalState) => {
     if (!address) return;
 
-    // Push this player's final score
-    await updatePlayerScore(
-      match.id, address,
-      finalState.score,
-      getAvgReactionTime(finalState)
-    );
-
-    if (isHost) {
-      // Give all players 2s to push their final scores, then pick winner
-      await new Promise(r => setTimeout(r, 2000));
-
-      const all    = await getMatchPlayers(match.id);
-      const sorted = [...all].sort((a, b) => b.score - a.score);
-      const top    = sorted[0]?.score ?? 0;
-      const tied   = sorted.filter(p => p.score === top);
-      const winner = tied.length === 1
-        ? sorted[0]
-        : tied.sort(
-            (a, b) => (a.avg_reaction_time || 9999) - (b.avg_reaction_time || 9999)
-          )[0];
-
-      await finishMatch(match.id, winner.wallet_address);
-
-      onGameEnd({
-        ...finalState,
-        allPlayers:  sorted,
-        winner:      winner.wallet_address,
-        isWinner:    winner.wallet_address.toLowerCase() === address.toLowerCase(),
-        prizePool:   match.prize_pool || 0,
-        perfectHits: finalState.perfectHits,
-        maxCombo:    finalState.maxCombo,
-      });
-
-    } else {
-      // Non-host: wait for host to declare winner (host needs 2s + finishMatch time)
-      await new Promise(r => setTimeout(r, 4000));
-
-      const all = await getMatchPlayers(match.id);
-      const sorted = [...all].sort((a, b) => b.score - a.score);
-
-      const { data: matchRow } = await supabase
-        .from('matches')
-        .select('winner_wallet')
-        .eq('id', match.id)
-        .single();
-
-      const winnerWallet = matchRow?.winner_wallet || sorted[0]?.wallet_address;
-
-      onGameEnd({
-        ...finalState,
-        allPlayers:  sorted,
-        winner:      winnerWallet,
-        isWinner:    winnerWallet?.toLowerCase() === address.toLowerCase(),
-        prizePool:   match.prize_pool || 0,
-        perfectHits: finalState.perfectHits,
-        maxCombo:    finalState.maxCombo,
-      });
+    // Resilient on purpose: a single failed request (a throttled background
+    // tab, a brief connectivity blip) must never permanently strand the
+    // player on "Calculating results" with no way back except navigating
+    // away. Retry indefinitely rather than letting one error kill the flow.
+    while (true) {
+      try {
+        await updatePlayerScore(match.id, address, finalState.score, getAvgReactionTime(finalState), 'done');
+        break;
+      } catch (err) {
+        console.error('Failed to submit final score, retrying:', err);
+        await new Promise(r => setTimeout(r, 2000));
+      }
     }
+
+    // Poll for the backend-declared winner. No fixed timeout — the declarer
+    // runs on its own schedule, and "Calculating results..." stays accurate
+    // for however long that takes rather than guessing a delay.
+    let winnerWallet = null;
+    while (!winnerWallet) {
+      try {
+        const { data: matchRow } = await supabase
+          .from('matches')
+          .select('winner_wallet')
+          .eq('id', match.id)
+          .maybeSingle();
+
+        if (matchRow?.winner_wallet) {
+          winnerWallet = matchRow.winner_wallet;
+          break;
+        }
+      } catch (err) {
+        console.error('Failed to poll for winner, retrying:', err);
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    const all    = await getMatchPlayers(match.id);
+    const sorted = [...all].sort((a, b) => b.score - a.score);
+
+    onGameEnd({
+      ...finalState,
+      allPlayers:  sorted,
+      winner:      winnerWallet,
+      isWinner:    winnerWallet.toLowerCase() === address.toLowerCase(),
+      prizePool:   match.prize_pool || 0,
+      perfectHits: finalState.perfectHits,
+      maxCombo:    finalState.maxCombo,
+    });
   };
 
   return (
@@ -321,6 +310,9 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
             <div className="big-text">TIME'S UP!</div>
             <div className="final-score">{gameState.score} pts</div>
             <div className="sub-text">Calculating results...</div>
+            <div className="sub-text" style={{ fontSize: '0.72rem', opacity: 0.7, marginTop: '0.3rem' }}>
+              Winners are confirmed on-chain within about 5 minutes
+            </div>
           </div>
         )}
       </div>
