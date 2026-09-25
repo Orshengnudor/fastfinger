@@ -1,6 +1,6 @@
-/* ===== FastFinger — App Styles (Robinhood Chain brand: lime on warm black) ===== */
+/* ===== FastFinger - App Styles (Robinhood Chain brand: lime on warm black) ===== */
 
-/* Dark Theme (default) — warm near-black canvas, lime voltage accent */
+/* Dark Theme (default) - warm near-black canvas, lime voltage accent */
 :root,
 [data-theme="dark"] {
   --bg-primary:    hsl(30, 15%, 5%);
@@ -26,7 +26,7 @@
   --game-area-bg:  linear-gradient(145deg, hsl(30, 12%, 9%), hsl(30, 15%, 5%));
 }
 
-/* Light Theme — warm cream/ivory (header stays dark), deepened olive-lime accent for contrast */
+/* Light Theme - warm cream/ivory (header stays dark), deepened olive-lime accent for contrast */
 [data-theme="light"] {
   --bg-primary:    hsl(48, 25%, 92%);
   --bg-secondary:  hsl(48, 20%, 88%);
@@ -137,7 +137,7 @@
   gap: 0.75rem;
 }
 
-/* Ranks/Season: plain inline group on desktop (matches other nav-btns) —
+/* Ranks/Season: plain inline group on desktop (matches other nav-btns)  - 
    the mobile media query below hides this and shows .nav-more instead. */
 .nav-desktop-extra {
   display: flex;
@@ -145,7 +145,7 @@
 }
 
 /* "More" dropdown: hidden entirely on desktop, where .nav-desktop-extra
-   already shows Ranks/Season inline — there's nothing to collapse there. */
+   already shows Ranks/Season inline - there's nothing to collapse there. */
 .nav-more {
   display: none;
   position: relative;
@@ -154,8 +154,7 @@
 .nav-more-dropdown {
   position: absolute;
   top: calc(100% + 0.4rem);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-glow);
   border-radius: 10px;
@@ -336,7 +335,7 @@
   color: var(--accent);
 }
 
-/* Standard/Elimination mode toggle — separate from .player-opt because that
+/* Standard/Elimination mode toggle - separate from .player-opt because that
    one is a fixed 36px square built for single-digit player counts; this needs
    to fit "Standard"/"Elimination" text plus an icon without overflowing. */
 .mode-toggle {
@@ -1996,11 +1995,18 @@
 .docs-info-box a { color: var(--primary-glow); }
 
 /* Tier table */
-.docs-tier-table {
+.docs-tier-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   margin-top: 0.85rem;
+  border-radius: 10px;
+}
+
+.docs-tier-table {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
+  min-width: 480px;
 }
 
 .docs-tier-row {
@@ -2193,7 +2199,7 @@
   border-bottom: 2px solid var(--border);
 }
 
-/* Mock entry rows — slightly dimmed so real entries stand out */
+/* Mock entry rows - slightly dimmed so real entries stand out */
 .lb-row-mock {
   opacity: 0.72;
 }
@@ -2214,7 +2220,7 @@
 
 
 
-/* ═══ WIN SHARE CARD — Add to bottom of App.css ═══ */
+/* ═══ WIN SHARE CARD - Add to bottom of App.css ═══ */
 
 /* Share win button in GameResults */
 .share-win-btn {
@@ -2576,7 +2582,7 @@
 }
 
 
-/* Add to bottom of App.css — mobile hint below win card buttons */
+/* Add to bottom of App.css - mobile hint below win card buttons */
 
 .wsc-mobile-hint {
   font-size:   0.72rem;

@@ -11,14 +11,14 @@ interface IBurnable {
     function burn(uint256 amount) external;
 }
 
-/// @title FastFinger elimination escrow — $RAREFRIENDS stakes on Robinhood Chain
-/// @notice A separate contract from the standard FastFingerEscrow, deliberately —
+/// @title FastFinger elimination escrow - $RAREFRIENDS stakes on Robinhood Chain
+/// @notice A separate contract from the standard FastFingerEscrow, deliberately  - 
 /// that one stays untouched and live. This one is for 5+ player tables only,
 /// where one round narrows the field to a final 2, and the pot pays three
 /// places instead of one: 60% / 25% / 15% of a flat 90%-of-pot distributable.
 /// @dev No Friend bonus in this version. The standard contract's bonus lets
 /// the winner reveal their own Friend at their own claim time, independent of
-/// anyone else's claim — safe because there's only ever one claimant. Here
+/// anyone else's claim - safe because there's only ever one claimant. Here
 /// there are three independent claimants sharing one pot-wide rake decision;
 /// making the rake depend on whichever of them happens to claim first (or
 /// requiring a specific claim order) is exactly the kind of subtle rule that
@@ -33,7 +33,7 @@ contract FastFingerEliminationEscrow is Ownable2Step, ReentrancyGuard {
 
     // ─── Economics ──────────────────────────────────────────────────────────
     uint256 public constant BPS = 10_000;
-    /// @dev Flat rate for every match — see contract-level note on why there's
+    /// @dev Flat rate for every match - see contract-level note on why there's
     /// no Friend-bonus rate here yet.
     uint256 public constant DISTRIBUTABLE_BPS = 9000;
 
@@ -43,7 +43,7 @@ contract FastFingerEliminationEscrow is Ownable2Step, ReentrancyGuard {
     uint256 public constant THIRD_BPS = 1500;
 
     // ─── Match rules ────────────────────────────────────────────────────────
-    /// @dev Elimination mode needs a real field to narrow down — below this,
+    /// @dev Elimination mode needs a real field to narrow down - below this,
     /// use the standard FastFingerEscrow instead.
     uint8 public constant MIN_PLAYERS = 5;
     uint8 public constant MAX_PLAYERS = 10;
@@ -223,7 +223,7 @@ contract FastFingerEliminationEscrow is Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Claim your share. 1st, 2nd and 3rd can each claim independently,
-    /// in any order — the split was already fixed for all three back in
+    /// in any order - the split was already fixed for all three back in
     /// `declareResults`.
     function claimPrize(bytes32 matchId) external nonReentrant {
         Match storage m = _matches[matchId];
@@ -285,7 +285,7 @@ contract FastFingerEliminationEscrow is Ownable2Step, ReentrancyGuard {
     // ─── Permissionless safety valves ───────────────────────────────────────
 
     /// @notice After 7 days, any of the three shares still unclaimed is swept
-    /// (burned, or split with `rewards` once set) — one call handles whichever
+    /// (burned, or split with `rewards` once set) - one call handles whichever
     /// of the three are still outstanding.
     function sweepUnclaimed(bytes32 matchId) external nonReentrant {
         Match storage m = _matches[matchId];

@@ -32,13 +32,13 @@ export default function Matchmaking({ match, onGameStart, onLeave }) {
     return data;
   };
 
-  // ─── Core launch function — fetches game_start_time fresh from DB ──────────
+  // ─── Core launch function - fetches game_start_time fresh from DB ──────────
   const launchGame = async (knownStartTime) => {
     if (launchedRef.current) return;
 
     let startTimeStr = knownStartTime;
 
-    // Always verify from DB — don't trust payload alone
+    // Always verify from DB - don't trust payload alone
     if (!startTimeStr) {
       const { data } = await supabase
         .from('matches')
@@ -51,7 +51,7 @@ export default function Matchmaking({ match, onGameStart, onLeave }) {
     }
 
     if (!startTimeStr) {
-      // game_start_time still null — startMatch hasn't written it yet
+      // game_start_time still null - startMatch hasn't written it yet
       // Poll again in 500ms
       console.warn('[Matchmaking] game_start_time not ready, retrying in 500ms...');
       setTimeout(() => launchGame(null), 500);

@@ -117,7 +117,7 @@ export const getOpenMatches = async () => {
   })));
 
   // Filter: not full (use actual player count from match_players join)
-  // Age limit: 7 days (604800000 ms) — generous so old matches don't disappear
+  // Age limit: 7 days (604800000 ms) - generous so old matches don't disappear
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   const now        = Date.now();
 
@@ -145,7 +145,7 @@ export const getMyActiveMatch = async (walletAddress) => {
     .order('created_at', { ascending: false });
 
   // An elimination match past round 1 is only still "active" for this wallet
-  // if they're one of the two finalists — everyone else is fully done, even
+  // if they're one of the two finalists - everyone else is fully done, even
   // though the match itself is still technically in_progress for the finalists.
   const stillActive = (matches || []).find(m => {
     if (m.mode !== 'elimination') return true;
@@ -202,7 +202,7 @@ export const updatePlayerScore = async (matchId, walletAddress, score, reactionT
 };
 
 // Winner determination moved server-side (scripts/declareWinnersOnce.js), which
-// is the only thing with permission to write winner_wallet/declare_tx — see
+// is the only thing with permission to write winner_wallet/declare_tx - see
 // migration 00000000000000_init.sql. The client only ever reports its own
 // score and waits for the backend to fill in the result.
 
@@ -218,7 +218,7 @@ export const getClaimableWins = async (walletAddress) => {
 };
 
 // Elimination mode has three independent claimants, so there's no single
-// prize_claimed boolean per match — whether *this* wallet has already claimed
+// prize_claimed boolean per match - whether *this* wallet has already claimed
 // their specific share is checked on-chain instead (see
 // checkEliminationClaimed in blockchain.js), which can never drift from
 // what actually happened the way a Supabase flag could.
@@ -277,7 +277,7 @@ export const getLeaderboard = async () => {
 };
 
 // ─── Seasonal prize pool ──────────────────────────────────────────────────────
-// Funded and paid out manually by the project owner — this is tracking and
+// Funded and paid out manually by the project owner - this is tracking and
 // display only. No RF moves through any of these functions.
 
 export const getCurrentSeason = async () => {
@@ -289,7 +289,7 @@ export const getCurrentSeason = async () => {
 };
 
 export const createSeason = async (startsAt, endsAt, poolWallet) => {
-  // Only one active season at a time — close out any currently active one.
+  // Only one active season at a time - close out any currently active one.
   await supabase.from('seasons').update({ is_active: false }).eq('is_active', true);
   const { data, error } = await supabase.from('seasons')
     .insert({ starts_at: startsAt, ends_at: endsAt, pool_wallet: poolWallet, is_active: true })
@@ -299,7 +299,7 @@ export const createSeason = async (startsAt, endsAt, poolWallet) => {
 };
 
 // Cumulative in-game score per wallet across every match that finished inside
-// the season window — not RF won, not wins, the raw score total.
+// the season window - not RF won, not wins, the raw score total.
 export const getSeasonLeaderboard = async (startsAt, endsAt, limit = 5) => {
   const { data, error } = await supabase
     .from('match_players')

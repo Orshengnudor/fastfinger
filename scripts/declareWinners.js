@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 // ─── Config ──────────────────────────────────────────────────────────────────
 const RPC_URL = process.env.ROBINHOOD_RPC || 'https://rpc.mainnet.chain.robinhood.com';
 const ESCROW_ADDRESS = process.env.ESCROW_CONTRACT_ADDRESS;
-const ELIMINATION_ADDRESS = process.env.ELIMINATION_ESCROW_ADDRESS; // optional — elimination mode just won't settle without it
+const ELIMINATION_ADDRESS = process.env.ELIMINATION_ESCROW_ADDRESS; // optional - elimination mode just won't settle without it
 const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 
 if (!ESCROW_ADDRESS)    { console.error('❌ ESCROW_CONTRACT_ADDRESS not set'); process.exit(1); }
@@ -14,7 +14,7 @@ if (!ADMIN_PRIVATE_KEY) { console.error('❌ ADMIN_PRIVATE_KEY not set'); proces
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY, provider);
 
-// Must use the SERVICE key here, not anon — only service_role can write
+// Must use the SERVICE key here, not anon - only service_role can write
 // winner_wallet/declare_tx/finalist_a/finalist_b/elim_third/runner_up (see
 // supabase/migrations/00000000000000_init.sql and 20260924_elimination_mode.sql).
 const supabase = createClient(
@@ -39,7 +39,7 @@ const eliminationContract = ELIMINATION_ADDRESS
 const ROUND_DURATION_SEC = 60;
 const SETTLE_BUFFER_SEC  = 15;
 // Gap between round 1 ending and round 2 starting, shown to players as a
-// countdown — must match the frontend's own round-break timer.
+// countdown - must match the frontend's own round-break timer.
 const ROUND_BREAK_SEC = 60;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ const uuidToBytes32 = (uuid) => {
 };
 
 /// @dev The only place a winner is ever decided. Never trust a client-supplied
-/// winner_wallet — recompute from match_players every time, same tie-break as
+/// winner_wallet - recompute from match_players every time, same tie-break as
 /// the client UI uses for display (highest score, then lowest avg reaction time).
 const pickWinner = (players) => {
   const sorted = [...players].sort((a, b) => b.score - a.score);
@@ -60,7 +60,7 @@ const pickWinner = (players) => {
     : tied.sort((a, b) => (a.avg_reaction_time || 9999) - (b.avg_reaction_time || 9999))[0];
 };
 
-// ─── Declare Winner (standard mode — one winner, whole pot) ──────────────────
+// ─── Declare Winner (standard mode - one winner, whole pot) ──────────────────
 const declareWinnerOnChain = async (matchId, winnerAddress) => {
   const matchIdBytes32 = uuidToBytes32(matchId);
 
@@ -83,9 +83,9 @@ const declareWinnerOnChain = async (matchId, winnerAddress) => {
   }
 };
 
-// ─── Declare Results (elimination mode — three placements share the pot) ─────
+// ─── Declare Results (elimination mode - three placements share the pot) ─────
 const declareResultsOnChain = async (matchId, first, second, third) => {
-  if (!eliminationContract) throw new Error('ELIMINATION_ESCROW_ADDRESS not set — cannot declare elimination results');
+  if (!eliminationContract) throw new Error('ELIMINATION_ESCROW_ADDRESS not set - cannot declare elimination results');
   const matchIdBytes32 = uuidToBytes32(matchId);
 
   console.log(`\n🏆 Declaring results for elimination match ${matchId.slice(0,8)}...`);
@@ -198,7 +198,7 @@ const settleEliminationRound2 = async () => {
     const id = match.id.slice(0, 8);
     const r2Players = (match.match_players || []).filter(p => p.round === 2);
 
-    // A finalist who never played round 2 defaults to a 0-score no-show —
+    // A finalist who never played round 2 defaults to a 0-score no-show  - 
     // still gets 2nd place and can still claim, they just didn't show up.
     const scoreFor = (wallet) => r2Players.find(p => p.wallet_address === wallet) || { wallet_address: wallet, score: 0, avg_reaction_time: 9999 };
     const a = scoreFor(match.finalist_a);
@@ -258,7 +258,7 @@ const processFinishedMatches = async () => {
       let txHash;
       if (match.mode === 'elimination') {
         if (!match.runner_up || !match.elim_third) {
-          console.error(`   ❌ Elimination match ${match.id} missing runner_up/elim_third — skipping`);
+          console.error(`   ❌ Elimination match ${match.id} missing runner_up/elim_third - skipping`);
           continue;
         }
         txHash = await declareResultsOnChain(match.id, match.winner_wallet, match.runner_up, match.elim_third);
@@ -283,7 +283,7 @@ const start = async () => {
   console.log('🚀 FastFinger Winner Declarer Started (Robinhood Chain)');
   console.log(`   Admin: ${adminWallet.address}`);
   console.log(`   Standard escrow: ${ESCROW_ADDRESS}`);
-  console.log(`   Elimination escrow: ${ELIMINATION_ADDRESS || '(not set — elimination matches will not settle)'}`);
+  console.log(`   Elimination escrow: ${ELIMINATION_ADDRESS || '(not set - elimination matches will not settle)'}`);
 
   await processFinishedMatches();
   setInterval(processFinishedMatches, 15000); // every 15 seconds

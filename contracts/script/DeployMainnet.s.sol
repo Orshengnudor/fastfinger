@@ -7,11 +7,11 @@ import { FastFingerEscrow } from "../src/FastFingerEscrow.sol";
 /// @notice Robinhood Chain mainnet (4663) only.
 /// Env: DEPLOYER_KEY, ORACLE_ADDRESS.
 ///
-/// Run once WITHOUT --broadcast first — forge simulates the deploy against a
+/// Run once WITHOUT --broadcast first - forge simulates the deploy against a
 /// live fork of --rpc-url and will show you if anything would revert, at zero
 /// cost. Only add --broadcast once that simulation looks right.
 contract DeployMainnet is Script {
-    // Real, confirmed Rare Friends mainnet contracts — see
+    // Real, confirmed Rare Friends mainnet contracts - see
     // https://rarefriends.com/docs/contracts. Hardcoded here (not read from
     // env) so a deploy can't accidentally point at the wrong token.
     address constant RF          = 0x0779369854d3EcdEA927206718FFD7730C67B71f;

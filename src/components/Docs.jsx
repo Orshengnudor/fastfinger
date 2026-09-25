@@ -93,6 +93,7 @@ export default function Docs({ onBack }) {
         {/* Pool Tiers */}
         <Section title="💎 Pool Tiers">
           <p className="docs-body-text">Each tier is a fixed RF entry fee. The pot is your tier times the number of players at the table.</p>
+          <div className="docs-tier-table-wrap">
           <div className="docs-tier-table">
             <div className="docs-tier-row header">
               <span>Tier</span>
@@ -115,6 +116,7 @@ export default function Docs({ onBack }) {
                 <span>{t.win}</span>
               </div>
             ))}
+          </div>
           </div>
 
           <div className="docs-info-box">

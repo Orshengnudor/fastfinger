@@ -14,7 +14,7 @@ if (!process.env.SUPABASE_SERVICE_KEY) { console.error('SUPABASE_SERVICE_KEY not
 
 const provider    = new ethers.JsonRpcProvider(RPC_URL);
 const adminWallet = new ethers.Wallet(ADMIN_PRIVATE_KEY, provider);
-// Must use the SERVICE key here, not anon — only service_role can write
+// Must use the SERVICE key here, not anon - only service_role can write
 // winner_wallet/declare_tx/finalist_a/finalist_b/elim_third/runner_up (see
 // supabase/migrations/00000000000000_init.sql and 20260924_elimination_mode.sql).
 const supabase    = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -35,7 +35,7 @@ const SETTLE_BUFFER_SEC  = 15;
 const ROUND_BREAK_SEC    = 60; // must match the frontend's round-break countdown
 
 /// @dev The only place a winner is ever decided. Never trust a client-supplied
-/// winner_wallet — recompute from match_players every time, same tie-break as
+/// winner_wallet - recompute from match_players every time, same tie-break as
 /// the client UI uses for display (highest score, then lowest avg reaction time).
 const pickWinner = (players) => {
   const sorted = [...players].sort((a, b) => b.score - a.score);
@@ -190,11 +190,11 @@ const run = async () => {
       const id = match.id.slice(0, 8);
       const players = (match.match_players || []).map(p => p.wallet_address.toLowerCase());
       if (!players.includes(match.winner_wallet.toLowerCase())) {
-        console.error(`[${id}] Winner not in player list — leaving for manual review`);
+        console.error(`[${id}] Winner not in player list - leaving for manual review`);
         continue;
       }
       if (match.mode === 'elimination' && (!match.runner_up || !match.elim_third)) {
-        console.error(`[${id}] Missing runner_up/elim_third — leaving for manual review`);
+        console.error(`[${id}] Missing runner_up/elim_third - leaving for manual review`);
         continue;
       }
       const ok = await declareOnChain(match);

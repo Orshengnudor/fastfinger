@@ -117,7 +117,7 @@ export default function SeasonPool() {
           </div>
 
           <div className="escrow-notice" style={{ marginTop: '0.75rem' }}>
-            <Clock size={13} /> {fmtCountdown(endsMs)} — top 5 by cumulative in-game score this season
+            <Clock size={13} /> {fmtCountdown(endsMs)}. Top 5 by cumulative in-game score this season
           </div>
 
           <div className="leaderboard-table" style={{ marginTop: '1rem' }}>

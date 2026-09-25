@@ -36,7 +36,7 @@ export default function Lobby({ onJoinMatch }) {
 
   const handleModeChange = (next) => {
     setMode(next);
-    // Elimination only exists for 5+ tables — jump to the smallest valid one
+    // Elimination only exists for 5+ tables - jump to the smallest valid one
     // rather than leaving a now-invalid player count selected.
     if (next === 'elimination' && !PLAYER_OPTIONS_ELIMINATION.includes(maxPlayers)) {
       setMaxPlayers(PLAYER_OPTIONS_ELIMINATION[0]);
@@ -157,7 +157,7 @@ export default function Lobby({ onJoinMatch }) {
   };
 
   // Cancelling a solo match must release the on-chain stake, not just flip the
-  // Supabase row — otherwise the RF stays locked in the escrow with nothing to
+  // Supabase row - otherwise the RF stays locked in the escrow with nothing to
   // show it in the lobby.
   const handleCancel = async (match) => {
     if (!address || !walletClient) return;
@@ -241,7 +241,7 @@ export default function Lobby({ onJoinMatch }) {
           <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
             {mode === 'standard'
               ? 'One 60s round, highest score takes the whole pot.'
-              : 'Round 1 (5+ players) narrows the field to a final 2 — top 3 overall get paid.'}
+              : 'Round 1 (5+ players) narrows the field to a final 2. Top 3 overall get paid.'}
           </p>
         </div>
 

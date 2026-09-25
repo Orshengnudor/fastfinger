@@ -5,8 +5,8 @@ import { Script, console2 } from "forge-std/Script.sol";
 import { FastFingerEliminationEscrow } from "../src/FastFingerEliminationEscrow.sol";
 
 /// @notice Robinhood Chain mainnet (4663) only. A separate deployment from
-/// FastFingerEscrow — that one is untouched by this. Env: DEPLOYER_KEY,
-/// ORACLE_ADDRESS (reuse the same oracle wallet as the standard contract —
+/// FastFingerEscrow - that one is untouched by this. Env: DEPLOYER_KEY,
+/// ORACLE_ADDRESS (reuse the same oracle wallet as the standard contract  - 
 /// it's already funded with gas and already trusted by your backend).
 contract DeployElimination is Script {
     address constant RF = 0x0779369854d3EcdEA927206718FFD7730C67B71f;

@@ -143,7 +143,7 @@ function GameApp() {
         toggleDarkMode={() => setIsDarkMode(p => !p)}
       />
 
-      {/* Rejoin banner — only shown when user has an active unfinished match */}
+      {/* Rejoin banner - only shown when user has an active unfinished match */}
       {rejoinMatch && activeView !== 'matchmaking' && activeView !== 'game' && activeView !== 'results' && (
         <div className="rejoin-banner">
           <span>

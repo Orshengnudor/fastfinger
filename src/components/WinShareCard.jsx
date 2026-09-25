@@ -88,7 +88,7 @@ export default function WinShareCard({ results, match, onClose }) {
     <div className="wsc-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="wsc-modal">
 
-        {/* Phase: card — the visual card (hidden once rendered to image) */}
+        {/* Phase: card - the visual card (hidden once rendered to image) */}
         {phase !== 'image' && (
           <div className="wsc-card" ref={cardRef} style={{ opacity: phase === 'rendering' ? 0 : 1, pointerEvents: phase === 'rendering' ? 'none' : 'auto' }}>
             <div className="wsc-bg-grid" />
@@ -147,7 +147,7 @@ export default function WinShareCard({ results, match, onClose }) {
           </div>
         )}
 
-        {/* Phase: image — shown after rendering, user can long-press to save */}
+        {/* Phase: image - shown after rendering, user can long-press to save */}
         {phase === 'image' && imgSrc && (
           <div className="wsc-image-phase">
             <img
@@ -163,7 +163,7 @@ export default function WinShareCard({ results, match, onClose }) {
           </div>
         )}
 
-        {/* Actions — always visible */}
+        {/* Actions - always visible */}
         <div className="wsc-actions">
           {isMobile ? (
             phase === 'image' ? (

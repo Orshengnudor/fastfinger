@@ -43,45 +43,6 @@ export default function Header({ activeView, setActiveView, prizePool, isDarkMod
       </div>
 
       <nav className="header-nav">
-        <button
-          className={`nav-btn ${activeView === 'lobby' ? 'active' : ''}`}
-          onClick={() => goTo('lobby')}
-        >
-          Lobby
-        </button>
-        <button
-          className={`nav-btn ${activeView === 'practice' ? 'active' : ''}`}
-          onClick={() => goTo('practice')}
-        >
-          <Zap size={14} /> Practice
-        </button>
-        <button
-          data-tour="dashboard-btn"
-          className={`nav-btn ${activeView === 'dashboard' ? 'active' : ''}`}
-          onClick={() => goTo('dashboard')}
-        >
-          <LayoutDashboard size={14} /> Dashboard
-        </button>
-
-        {/* Ranks/Season: inline on desktop (room for everything), tucked
-            behind a "More" dropdown on mobile — which of the two shows is
-            purely CSS (.nav-desktop-extra / .nav-more), no JS breakpoint
-            detection needed. */}
-        <span className="nav-desktop-extra">
-          <button
-            className={`nav-btn ${activeView === 'leaderboard' ? 'active' : ''}`}
-            onClick={() => goTo('leaderboard')}
-          >
-            <Trophy size={14} /> Ranks
-          </button>
-          <button
-            className={`nav-btn ${activeView === 'season' ? 'active' : ''}`}
-            onClick={() => goTo('season')}
-          >
-            <Crown size={14} /> Season
-          </button>
-        </span>
-
         <div className="nav-more" ref={moreRef}>
           <button
             className={`nav-btn nav-more-btn ${activeView === 'leaderboard' || activeView === 'season' ? 'active' : ''}`}
@@ -107,6 +68,44 @@ export default function Header({ activeView, setActiveView, prizePool, isDarkMod
             </div>
           )}
         </div>
+
+        <button
+          className={`nav-btn ${activeView === 'lobby' ? 'active' : ''}`}
+          onClick={() => goTo('lobby')}
+        >
+          Lobby
+        </button>
+        <button
+          data-tour="dashboard-btn"
+          className={`nav-btn ${activeView === 'dashboard' ? 'active' : ''}`}
+          onClick={() => goTo('dashboard')}
+        >
+          <LayoutDashboard size={14} /> Dashboard
+        </button>
+        <button
+          className={`nav-btn ${activeView === 'practice' ? 'active' : ''}`}
+          onClick={() => goTo('practice')}
+        >
+          <Zap size={14} /> Practice
+        </button>
+
+        {/* Ranks/Season: inline on desktop, since there is room for
+            everything there. Mobile hides this and shows nav-more instead
+            (pure CSS toggle, no JS breakpoint check needed). */}
+        <span className="nav-desktop-extra">
+          <button
+            className={`nav-btn ${activeView === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => goTo('leaderboard')}
+          >
+            <Trophy size={14} /> Ranks
+          </button>
+          <button
+            className={`nav-btn ${activeView === 'season' ? 'active' : ''}`}
+            onClick={() => goTo('season')}
+          >
+            <Crown size={14} /> Season
+          </button>
+        </span>
       </nav>
 
       <div className="header-right">

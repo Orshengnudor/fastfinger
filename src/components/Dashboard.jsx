@@ -308,7 +308,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Elimination Prizes — three independent claimants, no Friend bonus yet */}
+      {/* Elimination Prizes - three independent claimants, no Friend bonus yet */}
       {elimClaimable.length > 0 && (
         <div className="claim-list" style={{ marginTop: '1.5rem' }}>
           <h3 className="claim-section-title"><Swords size={15} style={{ verticalAlign: 'middle' }} /> Elimination Prizes</h3>

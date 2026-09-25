@@ -17,10 +17,10 @@ interface IBurnable {
     function burn(uint256 amount) external;
 }
 
-/// @title FastFinger escrow — $RAREFRIENDS stakes on Robinhood Chain
+/// @title FastFinger escrow - $RAREFRIENDS stakes on Robinhood Chain
 /// @notice Players stake RF, the oracle names the winner, the winner claims.
 /// Rake is 10% (8% with a hardwired Generations Friend). Until `rewards` is
-/// configured, the whole rake is burned — see the note on `rewards` below for
+/// configured, the whole rake is burned - see the note on `rewards` below for
 /// why that's the launch default rather than a guessed address.
 contract FastFingerEscrow is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -55,13 +55,13 @@ contract FastFingerEscrow is Ownable2Step, ReentrancyGuard {
     /// address(0): Rare Friends' published contracts (Genesis, Generations,
     /// RF, ActivationManager, Hook, Market, Reserve, CCA) have no documented
     /// entry point for an outside contract to hand over RF and have it
-    /// correctly credited as reward-stream funding — that stream is driven by
+    /// correctly credited as reward-stream funding - that stream is driven by
     /// users' own Activate/Hardwire/Promote/Upgrade calls, not plain
     /// transfers. Sending rake there on a guess risks it being stuck rather
     /// than distributed. So at launch the entire rake burns instead (still
     /// deflationary, still favours every RF holder) and the owner can point
     /// `rewards` at a real receiver later via `setRewards`, once one exists,
-    /// without redeploying — this address is intentionally NOT immutable.
+    /// without redeploying - this address is intentionally NOT immutable.
     address public rewards;
 
     enum Status {
@@ -141,7 +141,7 @@ contract FastFingerEscrow is Ownable2Step, ReentrancyGuard {
         _;
     }
 
-    /// @param rf_ $RAREFRIENDS — the deploy script hardcodes the real address;
+    /// @param rf_ $RAREFRIENDS - the deploy script hardcodes the real address;
     /// this constructor doesn't re-validate it against a canonical constant so
     /// the contract stays testable against mocks without weakening the deploy
     /// path itself.
@@ -324,7 +324,7 @@ contract FastFingerEscrow is Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Winner share and rake for a pot. The rake's own burn/reward
-    /// split isn't decided here — see `_distributeRake`, since it depends on
+    /// split isn't decided here - see `_distributeRake`, since it depends on
     /// whether `rewards` is configured.
     function split(uint256 pot, bool friend) public pure returns (uint256 payout, uint256 rake) {
         payout = (pot * (friend ? FRIEND_WINNER_BPS : WINNER_BPS)) / BPS;

@@ -94,7 +94,7 @@ contract FastFingerEliminationEscrowTest is Test {
         vm.prank(oracle);
         esc.declareResults(ID, p[4], p[3], p[2]);
 
-        // 3rd claims before 1st or 2nd — must still work and pay the right amount
+        // 3rd claims before 1st or 2nd - must still work and pay the right amount
         vm.prank(p[2]);
         esc.claimPrize(ID);
         assertEq(rf.balanceOf(p[2]), 100_000 ether - 10 ether + 6.75 ether);

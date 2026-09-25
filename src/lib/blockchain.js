@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-// ─── Network — Robinhood Chain mainnet only ────────────────────────────────
+// ─── Network - Robinhood Chain mainnet only ────────────────────────────────
 export const CHAIN = {
   id: 4663,
   name: 'Robinhood Chain',
@@ -8,7 +8,7 @@ export const CHAIN = {
   explorerUrl: 'https://robinhoodchain.blockscout.com',
 };
 
-// Real Rare Friends contracts — confirmed at https://rarefriends.com/docs/contracts
+// Real Rare Friends contracts - confirmed at https://rarefriends.com/docs/contracts
 export const RF_TOKEN_ADDRESS = '0x0779369854d3EcdEA927206718FFD7730C67B71f';
 export const GENERATIONS_ADDRESS = '0x14C49e6118F46525dE9ab41a51cBAA3c6EBF181D';
 
@@ -41,7 +41,7 @@ export const getTierByIndex = (index) =>
 export const getTierByKey = (key) =>
   ENTRY_TIERS.find(t => t.key === key) || ENTRY_TIERS[Number(key)] || ENTRY_TIERS[0];
 
-// ─── Split preview — mirrors FastFingerEscrow.split() exactly (9000/9200 bps) ──
+// ─── Split preview - mirrors FastFingerEscrow.split() exactly (9000/9200 bps) ──
 export const WINNER_BPS = 9000;
 export const FRIEND_WINNER_BPS = 9200;
 
@@ -78,7 +78,7 @@ const ESCROW_ABI = [
   'function tierEntry(uint8 tier) external view returns (uint256)',
 ];
 
-// FastFingerEliminationEscrow — separate contract, no Friend bonus yet, three
+// FastFingerEliminationEscrow - separate contract, no Friend bonus yet, three
 // independent claimants instead of one.
 const ELIMINATION_ABI = [
   'function createMatch(bytes32 matchId, uint8 tier, uint8 maxPlayers) external',
@@ -121,7 +121,7 @@ const eliminationEscrow = (signerOrProvider) => {
   if (!ELIMINATION_ESCROW_ADDRESS) throw new Error('VITE_ELIMINATION_ESCROW not set');
   return new ethers.Contract(ELIMINATION_ESCROW_ADDRESS, ELIMINATION_ABI, signerOrProvider);
 };
-// Same tier RF stake, different contract address, chosen by match mode —
+// Same tier RF stake, different contract address, chosen by match mode  - 
 // every on-chain call below takes `mode` for exactly this reason.
 const contractFor = (mode, signerOrProvider) =>
   mode === 'elimination' ? eliminationEscrow(signerOrProvider) : escrow(signerOrProvider);
@@ -146,7 +146,7 @@ export const fromRfUnits = async (amountWei) => {
 };
 
 // ─── Balances ─────────────────────────────────────────────────────────────────
-// RF is the stake. ETH is gas only — never spent on entries.
+// RF is the stake. ETH is gas only - never spent on entries.
 export const getRfBalance = async (address) => {
   if (!address || !RF_TOKEN_ADDRESS) return 0;
   try { return await fromRfUnits(await rfToken(provider).balanceOf(address)); }
@@ -172,7 +172,7 @@ export const validateEntryBalance = async (address, tierIndex) => {
 
 // ─── Approval ─────────────────────────────────────────────────────────────────
 // RF requires an ERC-20 approval before the escrow can pull a stake, unlike the
-// old native-ETH `payable` flow. We approve exactly what's needed each time —
+// old native-ETH `payable` flow. We approve exactly what's needed each time  - 
 // simple and safe, at the cost of one extra signature per new stake amount.
 const ensureApproval = async (signer, ownerAddress, amountWei, mode) => {
   const spender = addressFor(mode);
@@ -186,7 +186,7 @@ const ensureApproval = async (signer, ownerAddress, amountWei, mode) => {
 
 // ─── On-chain calls ───────────────────────────────────────────────────────────
 // Every call below takes `mode` ('standard' | 'elimination') and routes to the
-// matching contract — the two are entirely separate deployments.
+// matching contract - the two are entirely separate deployments.
 export const createMatchOnChain = async (walletClient, matchId, maxPlayers, tierIndex, onStatus, mode = 'standard') => {
   try {
     const tier = getTierByIndex(tierIndex);
@@ -254,7 +254,7 @@ export const claimPrizeOnChain = async (walletClient, matchId, friendId = 0n) =>
     } catch (gasErr) {
       const reason = gasErr.reason || gasErr.shortMessage || '';
       if (/NotWinner/i.test(reason)) throw new Error('You are not the winner of this match.');
-      if (/NotDeclared/i.test(reason)) throw new Error('Winner not declared yet — try again shortly.');
+      if (/NotDeclared/i.test(reason)) throw new Error('Winner not declared yet. Try again shortly.');
       if (/ClaimWindowClosed/i.test(reason)) throw new Error('The 7-day claim window has closed.');
       if (/NotYourFriend/i.test(reason)) throw new Error('That Friend is not a hardwired Generations NFT you own.');
       throw new Error(reason || 'Contract rejected the claim.');
@@ -270,7 +270,7 @@ export const claimPrizeOnChain = async (walletClient, matchId, friendId = 0n) =>
 };
 
 // Elimination contract's claimPrize takes no friendId (no Friend bonus in this
-// version — see the contract's own NatSpec for why). 1st/2nd/3rd all use this
+// version - see the contract's own NatSpec for why). 1st/2nd/3rd all use this
 // same call; the contract knows which one you are from your address.
 export const claimEliminationPrizeOnChain = async (walletClient, matchId) => {
   try {
@@ -284,7 +284,7 @@ export const claimEliminationPrizeOnChain = async (walletClient, matchId) => {
     } catch (gasErr) {
       const reason = gasErr.reason || gasErr.shortMessage || '';
       if (/NotAPlacer/i.test(reason)) throw new Error('You did not place in the top 3 of this match.');
-      if (/NotDeclared/i.test(reason)) throw new Error('Results not declared yet — try again shortly.');
+      if (/NotDeclared/i.test(reason)) throw new Error('Results not declared yet. Try again shortly.');
       if (/AlreadyClaimed/i.test(reason)) throw new Error('You already claimed this prize.');
       if (/ClaimWindowClosed/i.test(reason)) throw new Error('The 7-day claim window has closed.');
       throw new Error(reason || 'Contract rejected the claim.');
@@ -342,7 +342,7 @@ export const getEliminationMatchOnChain = async (matchId) => {
 };
 
 // Mirrors FastFingerEliminationEscrow's flat split exactly (9000 bps
-// distributable, then 60/25/15) — for showing payouts before results exist.
+// distributable, then 60/25/15) - for showing payouts before results exist.
 export const ELIMINATION_DISTRIBUTABLE_BPS = 9000;
 export const ELIMINATION_FIRST_BPS = 6000;
 export const ELIMINATION_SECOND_BPS = 2500;
@@ -357,7 +357,7 @@ export const previewEliminationSplit = (potRf) => {
 };
 
 // Elimination mode has three independent claimants and no single
-// prize_claimed flag — ask the contract directly whether this address has
+// prize_claimed flag - ask the contract directly whether this address has
 // already claimed their share of this match. Can never drift from reality.
 export const checkEliminationClaimed = async (matchId, address) => {
   if (!matchId || !address) return false;

@@ -35,7 +35,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
   const isFinalist = matchRow.finalist_a === address || matchRow.finalist_b === address;
   const currentRound = stage.startsWith('r2') ? 2 : 1;
 
-  // ─── Figure out where to resume — critical for rejoining mid-match ─────────
+  // ─── Figure out where to resume - critical for rejoining mid-match ─────────
   useEffect(() => {
     (async () => {
       const { data: fresh } = await supabase.from('matches').select('*').eq('id', match.id).single();
@@ -47,14 +47,14 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
 
       if (m.round === 2 && m.finalist_a) {
         if (m.finalist_a !== address && m.finalist_b !== address) {
-          // Not a finalist — done. The effect below hands off to GameResults.
+          // Not a finalist - done. The effect below hands off to GameResults.
           const all = await getMatchPlayers(match.id, 1);
           const sorted = [...all].sort((a, b) => b.score - a.score);
           setMyR1Placement(sorted.findIndex(p => p.wallet_address === address) + 1);
           setStage('eliminated');
           return;
         }
-        // A finalist — either waiting for round 2 to start or already playing it.
+        // A finalist - either waiting for round 2 to start or already playing it.
         const startAt = m.round2_start_time ? new Date(m.round2_start_time).getTime() : Date.now();
         if (Date.now() >= startAt) beginRound(2, m, startAt);
         else scheduleRoundStart(2, m, startAt);
@@ -69,7 +69,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Once elimination is determined, hand off to GameResults immediately —
+  // Once elimination is determined, hand off to GameResults immediately  - 
   // no separate terminal screen here, one unified results screen for every
   // outcome (1st/2nd/3rd/eliminated).
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
     setGameState(prev => ({ ...prev, isActive: true, timeLeft: remainingSec }));
   };
 
-  // ─── Shared playing-loop: timer, spawner, cleanup — same for both rounds ───
+  // ─── Shared playing-loop: timer, spawner, cleanup - same for both rounds ───
   const playing = stage === 'r1-playing' || stage === 'r2-playing';
 
   useEffect(() => {
@@ -227,13 +227,13 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
         setStage('eliminated');
         return;
       }
-      // Advanced — show the "you're in the final" screen then start round 2.
+      // Advanced - show the "you're in the final" screen then start round 2.
       const startAt = new Date(settled.round2_start_time).getTime();
       scheduleRoundStart(2, settled, startAt);
       return;
     }
 
-    // Round 2 over — poll for the final on-chain-ready result.
+    // Round 2 over - poll for the final on-chain-ready result.
     let settled = null;
     while (!settled) {
       try {
@@ -271,7 +271,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
     });
   };
 
-  // Brief transitional frame — the effect above already calls onGameEnd the
+  // Brief transitional frame - the effect above already calls onGameEnd the
   // moment elimination is detected, so this shows for a beat at most.
   if (stage === 'eliminated') {
     return (
@@ -280,7 +280,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
           <Skull size={48} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
           <h1>Eliminated</h1>
           <p style={{ color: 'var(--text-muted)' }}>
-            You placed #{myR1Placement} in Round 1 — the top 2 advanced to the final.
+            You placed #{myR1Placement} in Round 1. The top 2 advanced to the final.
           </p>
         </div>
       </div>
@@ -320,7 +320,7 @@ export default function EliminationFlow({ match, players: initialPlayers, onGame
               {countdownNum > 0 ? countdownNum : 'GO!'}
             </div>
             <p style={{ fontSize: '0.82rem', opacity: 0.7, marginTop: '0.5rem' }}>
-              {stage === 'r1-countdown' ? 'All players start at the same time' : 'Final round — winner takes 1st, loser takes 2nd'}
+              {stage === 'r1-countdown' ? 'All players start at the same time' : 'Final round: winner takes 1st, loser takes 2nd'}
             </p>
           </div>
         )}

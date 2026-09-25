@@ -6,7 +6,7 @@ import {
 } from '../lib/gameEngine';
 
 const BEST_KEY = 'ff-practice-best';
-// Matches .game-play-area's aspect-ratio (320/384) in App.css — same fixed
+// Matches .game-play-area's aspect-ratio (320/384) in App.css - same fixed
 // spawn-space assumption GamePlay.jsx and EliminationFlow.jsx already use,
 // which the CSS keeps close to true at any real screen width via 95vw/max-width.
 const AREA_WIDTH  = 320;
@@ -121,7 +121,7 @@ export default function PracticeMode({ onBack }) {
       <div className="lobby">
         <div className="lobby-header">
           <h2>Practice Mode</h2>
-          <p>No wallet, no stake — just beat your own score</p>
+          <p>No wallet, no stake. Just beat your own score</p>
         </div>
         <div className="create-match-card" style={{ textAlign: 'center' }}>
           <Zap size={40} style={{ opacity: 0.5, marginBottom: '0.75rem' }} />
@@ -165,7 +165,7 @@ export default function PracticeMode({ onBack }) {
             <div className="big-text" style={{ fontSize: '4rem' }}>
               {countdownNum > 0 ? countdownNum : 'GO!'}
             </div>
-            <p style={{ fontSize: '0.82rem', opacity: 0.7, marginTop: '0.5rem' }}>Practice round — no RF at stake</p>
+            <p style={{ fontSize: '0.82rem', opacity: 0.7, marginTop: '0.5rem' }}>Practice round: no RF at stake</p>
           </div>
         )}
 

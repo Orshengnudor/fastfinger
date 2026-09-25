@@ -40,7 +40,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
 
   // ─── Start logic ──────────────────────────────────────────────────────────
   // The game ends at a fixed UTC time: game_start_time + ROUND_DURATION_SEC.
-  // Everyone — early or late — ends at that exact moment.
+  // Everyone - early or late - ends at that exact moment.
   // Late joiners simply have less time to score.
   useEffect(() => {
     const gameStartTime = match.game_start_time;
@@ -54,7 +54,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
     }
 
     const startAt  = new Date(gameStartTime).getTime();
-    // The moment everyone's game ends — fixed for all players
+    // The moment everyone's game ends - fixed for all players
     const endAt    = startAt + ROUND_DURATION_SEC * 1000;
     gameEndAtRef.current = endAt;
 
@@ -62,7 +62,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
     const msUntilEnd = endAt - now;
 
     if (msUntilEnd <= 0) {
-      // Game already fully over — go straight to finished
+      // Game already fully over - go straight to finished
       console.log('[GamePlay] Game already ended, showing results');
       setPhase('finished');
       setTimeout(() => handleGameOver(gsRef.current), 500);
@@ -72,7 +72,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
     const msUntilStart = startAt - now;
 
     if (msUntilStart > 0) {
-      // Game hasn't started yet — show countdown then begin with full time
+      // Game hasn't started yet - show countdown then begin with full time
       const totalSecs = Math.ceil(msUntilStart / 1000);
       setCountdownNum(totalSecs);
 
@@ -91,9 +91,9 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
       return () => { clearInterval(interval); clearTimeout(timer); };
 
     } else {
-      // Game already started — join mid-game with only remaining time
+      // Game already started - join mid-game with only remaining time
       const remainingSec = Math.round(msUntilEnd / 1000);
-      console.log(`[GamePlay] Late join — ${remainingSec}s remaining`);
+      console.log(`[GamePlay] Late join - ${remainingSec}s remaining`);
       setCountdownNum(0);
       beginGame(Math.max(1, remainingSec));
     }
@@ -105,7 +105,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
     setGameState(prev => ({ ...prev, isActive: true, timeLeft: durationSec }));
   };
 
-  // ─── Game timer — ticks down and ends at the right UTC moment ─────────────
+  // ─── Game timer - ticks down and ends at the right UTC moment ─────────────
   useEffect(() => {
     if (phase !== 'playing') return;
 
@@ -189,7 +189,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
   // ─── Game over ────────────────────────────────────────────────────────────
   // All players end at the same UTC moment so no waiting needed for that part.
   // The winner itself is decided server-side (scripts/declareWinnersOnce.js),
-  // not here — this just reports the final score and waits for that result.
+  // not here - this just reports the final score and waits for that result.
   const handleGameOver = async (finalState) => {
     if (!address) return;
 
@@ -207,7 +207,7 @@ export default function GamePlay({ match, players: initialPlayers, onGameEnd }) 
       }
     }
 
-    // Poll for the backend-declared winner. No fixed timeout — the declarer
+    // Poll for the backend-declared winner. No fixed timeout - the declarer
     // runs on its own schedule, and "Calculating results..." stays accurate
     // for however long that takes rather than guessing a delay.
     let winnerWallet = null;

@@ -1,6 +1,6 @@
-// FastFinger — Winner Declarer (Supabase Edge Function)
+// FastFinger - Winner Declarer (Supabase Edge Function)
 //
-// Invoked by pg_cron on a schedule (every minute), not a database webhook —
+// Invoked by pg_cron on a schedule (every minute), not a database webhook  - 
 // does the full job every time: settle standard matches, settle elimination
 // round 1 (narrow to top 2 + 3rd), settle elimination round 2 (the final
 // head-to-head), then declare anything settled but not yet on-chain, routed
@@ -163,7 +163,7 @@ serve(async (req) => {
         const id = String(match.id).slice(0, 8)
         const players = ((match.match_players as { wallet_address: string }[]) || []).map((p) => p.wallet_address.toLowerCase())
         if (!players.includes(String(match.winner_wallet).toLowerCase())) {
-          notes.push(`[${id}] winner not in player list — manual review`)
+          notes.push(`[${id}] winner not in player list - manual review`)
           continue
         }
         try {

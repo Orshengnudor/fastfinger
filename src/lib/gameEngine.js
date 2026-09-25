@@ -147,7 +147,7 @@ export const removeExpiredTargets = (gameState) => {
   return gameState;
 };
 
-// Dynamic spawn rate — gets faster toward the end
+// Dynamic spawn rate - gets faster toward the end
 export const getRandomSpawnInterval = (timeLeft = ROUND_DURATION) => {
   const urgency = Math.max(0.35, timeLeft / ROUND_DURATION);
   const min = SPAWN_INTERVAL_MIN * urgency;

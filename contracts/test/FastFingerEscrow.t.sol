@@ -30,7 +30,7 @@ contract FastFingerEscrowTest is Test {
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     function setUp() public {
-        vm.chainId(4663); // Robinhood Chain mainnet — the only chain this contract runs on.
+        vm.chainId(4663); // Robinhood Chain mainnet - the only chain this contract runs on.
         rf = new MockRF();
         gens = new MockGenerations();
         esc = new FastFingerEscrow(address(rf), address(gens), oracle);
@@ -64,7 +64,7 @@ contract FastFingerEscrowTest is Test {
 
     // ─── deployment guards ────────────────────────────────────────────────
     function test_RevertsOnOtherChain() public {
-        vm.chainId(8453); // Base — or anything that isn't 4663
+        vm.chainId(8453); // Base - or anything that isn't 4663
         vm.expectRevert(FastFingerEscrow.WrongChain.selector);
         new FastFingerEscrow(address(rf), address(gens), oracle);
     }
@@ -165,7 +165,7 @@ contract FastFingerEscrowTest is Test {
         esc.cancelMatch(ID);
     }
 
-    // ─── claim: default (rewards unset) — full rake burns ────────────────
+    // ─── claim: default (rewards unset) - full rake burns ────────────────
     function test_ClaimNoFriend_FullRakeBurns() public {
         _create(alice, 2, 4); // Gold, 4 players -> pot 200
         _join(bob);
@@ -199,7 +199,7 @@ contract FastFingerEscrowTest is Test {
         assertEq(supplyBefore - rf.totalSupply(), 8 ether); // whole 8% rake burned
     }
 
-    // ─── claim: once a rewards receiver is configured — 50/50 rake split ──
+    // ─── claim: once a rewards receiver is configured - 50/50 rake split ──
     function test_ClaimNoFriend_WithRewardsConfigured_50_50() public {
         MockRewards rewards = new MockRewards();
         esc.setRewards(address(rewards));
