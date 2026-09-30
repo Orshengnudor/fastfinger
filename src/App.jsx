@@ -10,6 +10,7 @@ import EliminationFlow from './components/EliminationFlow';
 import GameResults from './components/GameResults';
 import Leaderboard from './components/Leaderboard';
 import SeasonPool from './components/SeasonPool';
+import ClaimFaucet from './components/ClaimFaucet';
 import Dashboard from './components/Dashboard';
 import Docs from './components/Docs';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
@@ -128,6 +129,7 @@ function GameApp() {
         );
       case 'leaderboard': return <Leaderboard />;
       case 'season':      return <SeasonPool />;
+      case 'faucet':      return <ClaimFaucet />;
       case 'dashboard':   return <Dashboard />;
       default:            return <Lobby onJoinMatch={handleJoinMatch} />;
     }

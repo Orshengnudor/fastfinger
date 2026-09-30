@@ -389,3 +389,167 @@ export const formatWallet = (address) => {
 
 export const formatRf = (amount, decimals = 2) => parseFloat(amount || 0).toFixed(decimals);
 export const formatEth = (eth) => parseFloat(eth || 0).toFixed(5);
+
+// ─── Season pool ────────────────────────────────────────────────────────────
+// Real on-chain state and actions for FastFingerSeasonPool. Supabase still
+// owns the scoring period (starts_at/ends_at) and the leaderboard itself,
+// this covers the pool's actual RF balance and whether a season has been
+// started/ended on-chain, plus funding and paying it out for real.
+export const SEASON_POOL_ADDRESS = '0xe347929a09BA4ec3B6B4dc80839e40E6816cfc84';
+
+const SEASON_POOL_ABI = [
+  'function balance() view returns (uint256)',
+  'function seasonId() view returns (uint256)',
+  'function seasonActive() view returns (bool)',
+  'function seasonStartedAt() view returns (uint256)',
+  'function seasonEndedAt() view returns (uint256)',
+  'function totalPaidOut() view returns (uint256)',
+  'function startSeason() external',
+  'function endSeason() external',
+  'function fund(uint256 amount) external',
+  'function payout(address winner, uint256 amount, string note) external',
+];
+
+const seasonPool = (signerOrProvider) => new ethers.Contract(SEASON_POOL_ADDRESS, SEASON_POOL_ABI, signerOrProvider);
+
+// Read-only, safe to call with no wallet connected.
+export const getSeasonPoolStatus = async () => {
+  try {
+    const pool = seasonPool(provider);
+    const [balanceWei, seasonId, seasonActive, seasonStartedAt, seasonEndedAt] = await Promise.all([
+      pool.balance(),
+      pool.seasonId(),
+      pool.seasonActive(),
+      pool.seasonStartedAt(),
+      pool.seasonEndedAt(),
+    ]);
+    return {
+      balance: await fromRfUnits(balanceWei),
+      seasonId: Number(seasonId),
+      seasonActive,
+      seasonStartedAt: Number(seasonStartedAt),
+      seasonEndedAt: Number(seasonEndedAt),
+    };
+  } catch (err) {
+    console.error('getSeasonPoolStatus failed:', err);
+    return { balance: 0, seasonId: 0, seasonActive: false, seasonStartedAt: 0, seasonEndedAt: 0 };
+  }
+};
+
+export const startSeasonOnChain = async (walletClient) => {
+  try {
+    const signer = await walletClientToSigner(walletClient);
+    const tx = await seasonPool(signer).startSeason();
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('startSeasonOnChain failed:', err);
+    return { success: false, error: err.reason || err.shortMessage || err.message };
+  }
+};
+
+export const endSeasonOnChain = async (walletClient) => {
+  try {
+    const signer = await walletClientToSigner(walletClient);
+    const tx = await seasonPool(signer).endSeason();
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('endSeasonOnChain failed:', err);
+    return { success: false, error: err.reason || err.shortMessage || err.message };
+  }
+};
+
+export const fundSeasonPoolOnChain = async (walletClient, amountRf, onStatus) => {
+  try {
+    const amountWei = await toRfUnits(amountRf);
+    const signer = await walletClientToSigner(walletClient);
+    const address = await signer.getAddress();
+
+    onStatus?.('Checking RF approval...');
+    const token = rfToken(signer);
+    const current = await token.allowance(address, SEASON_POOL_ADDRESS);
+    if (current < amountWei) {
+      const approveTx = await token.approve(SEASON_POOL_ADDRESS, amountWei);
+      await approveTx.wait();
+    }
+
+    onStatus?.('Funding season pool...');
+    const tx = await seasonPool(signer).fund(amountWei);
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('fundSeasonPoolOnChain failed:', err);
+    return { success: false, error: err.reason || err.shortMessage || err.message };
+  }
+};
+
+export const payoutSeasonOnChain = async (walletClient, winnerAddress, amountRf, note = '') => {
+  try {
+    const amountWei = await toRfUnits(amountRf);
+    const signer = await walletClientToSigner(walletClient);
+    const tx = await seasonPool(signer).payout(winnerAddress, amountWei, note);
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('payoutSeasonOnChain failed:', err);
+    return { success: false, error: err.reason || err.shortMessage || err.message };
+  }
+};
+
+// ─── Faucet: first-100 onboarding claim ────────────────────────────────────
+export const FAUCET_ADDRESS = '0xb1B83a1768196F9A30aa2cD026646beeF4d84b06';
+
+const FAUCET_ABI = [
+  'function balance() view returns (uint256)',
+  'function remaining() view returns (uint256)',
+  'function claimedCount() view returns (uint256)',
+  'function maxClaims() view returns (uint256)',
+  'function claimAmount() view returns (uint256)',
+  'function claimOpen() view returns (bool)',
+  'function hasClaimed(address) view returns (bool)',
+  'function claim() external',
+];
+
+const faucet = (signerOrProvider) => new ethers.Contract(FAUCET_ADDRESS, FAUCET_ABI, signerOrProvider);
+
+// Read-only, safe to call with no wallet connected. address is optional,
+// pass the connected wallet to also learn whether it has already claimed.
+export const getFaucetStatus = async (address) => {
+  try {
+    const f = faucet(provider);
+    const [balanceWei, remainingWei, claimedCount, maxClaims, claimAmountWei, claimOpen, hasClaimed] = await Promise.all([
+      f.balance(),
+      f.remaining(),
+      f.claimedCount(),
+      f.maxClaims(),
+      f.claimAmount(),
+      f.claimOpen(),
+      address ? f.hasClaimed(address) : Promise.resolve(false),
+    ]);
+    return {
+      balance: await fromRfUnits(balanceWei),
+      remaining: Number(remainingWei),
+      claimedCount: Number(claimedCount),
+      maxClaims: Number(maxClaims),
+      claimAmount: await fromRfUnits(claimAmountWei),
+      claimOpen,
+      hasClaimed,
+    };
+  } catch (err) {
+    console.error('getFaucetStatus failed:', err);
+    return { balance: 0, remaining: 0, claimedCount: 0, maxClaims: 0, claimAmount: 0, claimOpen: false, hasClaimed: false };
+  }
+};
+
+export const claimFaucetOnChain = async (walletClient) => {
+  try {
+    const signer = await walletClientToSigner(walletClient);
+    const tx = await faucet(signer).claim();
+    const receipt = await tx.wait();
+    return { success: true, txId: tx.hash, blockNumber: receipt.blockNumber };
+  } catch (err) {
+    console.error('claimFaucetOnChain failed:', err);
+    return { success: false, error: err.reason || err.shortMessage || err.message };
+  }
+};

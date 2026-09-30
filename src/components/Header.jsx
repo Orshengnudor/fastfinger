@@ -1,6 +1,6 @@
 import { useAccount } from 'wagmi';
 import { ConnectKitButton } from 'connectkit';
-import { Trophy, Sun, Moon, LayoutDashboard, Wallet, Zap, Crown, Menu } from 'lucide-react';
+import { Trophy, Sun, Moon, LayoutDashboard, Wallet, Zap, Crown, Menu , Gift } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { getRfBalance } from '../lib/blockchain';
 
@@ -65,6 +65,12 @@ export default function Header({ activeView, setActiveView, prizePool, isDarkMod
               >
                 <Crown size={14} /> Season
               </button>
+              <button
+                className={`nav-more-item ${activeView === 'faucet' ? 'active' : ''}`}
+                onClick={() => goTo('faucet')}
+              >
+                <Gift size={14} /> Claim
+              </button>
             </div>
           )}
         </div>
@@ -104,6 +110,12 @@ export default function Header({ activeView, setActiveView, prizePool, isDarkMod
             onClick={() => goTo('season')}
           >
             <Crown size={14} /> Season
+          </button>
+          <button
+            className={`nav-btn ${activeView === 'faucet' ? 'active' : ''}`}
+            onClick={() => goTo('faucet')}
+          >
+            <Gift size={14} /> Claim
           </button>
         </span>
       </nav>
