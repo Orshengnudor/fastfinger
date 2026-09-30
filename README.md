@@ -151,9 +151,9 @@ Same permissionless safety valves and owner functions as the standard contract.
 | `0xdf49439509fD864Bb4d84bF6f8f58B65929ceA78` | Oracle, a single EOA, not a multisig, the only address that can call `declareWinner` or `declareResults` |
 | verify live via `owner()` on either contract | Owner, the deploying wallet, can only call `setOracle` and `setRewards` |
 | `0x0000000000000000000000000000000000dEaD` | Dead-burn fallback if the RF token's own `burn()` call fails |
-| Unset, `address(0)` | Rewards receiver on both contracts, see below |
+| `0xe347929a09BA4ec3B6B4dc80839e40E6816cfc84` | Rewards receiver on both contracts, see below |
 
-**Rewards receiver:** currently unset on both contracts. There is no documented, verified entry point yet for handing RF to a real Rare Friends reward stream; guessing at one risks it getting stuck. Until a real receiver is confirmed, the entire rake burns instead, still deflationary, still benefits every RF holder. The owner can call `setRewards(address)` at any time once a real receiver exists, no redeploy needed. The contract reverts with `RewardsNotContract` if the address given is a plain wallet rather than an actual contract.
+**Rewards receiver:** configured on both contracts, pointing at `FastFingerSeasonPool` (`0xe347929a09BA4ec3B6B4dc80839e40E6816cfc84`), see the Season pool funding section below for what that contract does. The rake's rewards half now flows into the season pool automatically as matches are played, instead of burning. The owner can call `setRewards(address)` again at any time to point it elsewhere, no redeploy needed. The contract reverts with `RewardsNotContract` if the address given is a plain wallet rather than an actual contract.
 
 ## What the oracle can and cannot do
 
@@ -265,3 +265,39 @@ Run every file in `supabase/migrations/` against your Supabase project, in filen
 ## Backend setup
 
 `scripts/declareWinners.js`, `scripts/declareWinnersOnce.js`, the Supabase edge function, and the GitHub Action all read `ROBINHOOD_RPC`, `ESCROW_CONTRACT_ADDRESS`, and `ELIMINATION_ESCROW_ADDRESS`, and sign with `ADMIN_PRIVATE_KEY`, which must be the same wallet passed as `ORACLE_ADDRESS` at deploy time.
+
+## Season pool funding: FastFingerSeasonPool
+
+The season pool's prize money is no longer manually funded by the owner. A
+dedicated contract, `FastFingerSeasonPool`, is set as the `rewards` receiver
+on both `FastFingerEscrow` and `FastFingerEliminationEscrow`, so the rewards
+half of every match's rake flows into it automatically as people play, no
+owner action required to keep it funded.
+
+**Address:** `0xe347929a09BA4ec3B6B4dc80839e40E6816cfc84` (Robinhood Chain
+mainnet, verified as a partial match, same situation as
+FastFingerEliminationEscrow above: bytecode is identical to source, only the
+embedded metadata hash differs)
+
+**What it does:**
+- Receives RF automatically from both escrows' rake, a plain ERC20 transfer,
+  nothing special required on this end
+- `fund(uint256 amount)`, open to anyone, not owner-only: voluntarily add RF
+  to the pool from your own wallet on top of the automatic rake income
+  (requires an `approve()` first)
+- `balance()`: the pool's current RF balance, what the app's live balance
+  display should read
+- `seasonId()` / `seasonActive()`: `seasonId` of 0 means no season has ever
+  started ("waiting to start"). The owner calls `startSeason()` to begin one
+  and `endSeason()` to close it out before paying winners
+- `payout(winner, amount, note)` / `payoutBatch(winners, amounts, note)`,
+  owner only: pays season winners from the accumulated pool, the same top-N
+  by cumulative score process as before, just funded automatically instead
+  of manually
+- `sweep(to)`, owner only: a safety valve to move the whole balance if this
+  contract is ever retired or migrated
+
+Source, a 39-test suite (including a 512-run fuzz test on payout amounts),
+and the deploy script live at `contracts/src/FastFingerSeasonPool.sol`,
+`contracts/test/FastFingerSeasonPool.t.sol`, and
+`contracts/script/DeploySeasonPool.s.sol`.
