@@ -301,3 +301,36 @@ Source, a 39-test suite (including a 512-run fuzz test on payout amounts),
 and the deploy script live at `contracts/src/FastFingerSeasonPool.sol`,
 `contracts/test/FastFingerSeasonPool.t.sol`, and
 `contracts/script/DeploySeasonPool.s.sol`.
+
+## Onboarding: FastFingerFaucet
+
+The first 100 wallets to connect can each claim 20 RF once, a fixed,
+one-time head start so new players have enough to actually try the game
+before needing to buy in themselves.
+
+**Address:** `0xb1B83a1768196F9A30aa2cD026646beeF4d84b06` (Robinhood Chain
+mainnet, owned by the same wallet as FastFingerEscrow and
+FastFingerSeasonPool)
+
+**How it works:**
+- `claim()`: sends the caller 20 RF, once per wallet ever, enforced by an
+  on-chain mapping, not a database
+- The 100-wallet cap is the hard limit, set once at deploy time
+- `setClaimOpen(bool)`, owner only: pauses or resumes claiming at any time,
+  independent of the wallet cap, no hardcoded deadline
+- `fund(uint256)`, open to anyone, or a plain RF transfer to the contract
+  address works identically, both just add to the balance it pays out from
+- `balance()` / `remaining()` / `claimedCount()`: what the UI reads for the
+  live "X / 100 claimed" display
+
+Funding is managed manually, by design, the same as the season pool
+originally was: `remaining()` reflects the wallet cap only, not whether the
+pool currently holds enough RF to cover every remaining spot. If it's ever
+under-funded, a claim past that point reverts cleanly with
+`InsufficientBalance` rather than sending a partial or incorrect amount.
+
+22 tests, including a fuzz test that tries claiming from up to 150 wallets
+and confirms the count never exceeds 100 regardless. Source, tests, and the
+deploy script live at `contracts/src/FastFingerFaucet.sol`,
+`contracts/test/FastFingerFaucet.t.sol`, and
+`contracts/script/DeployFaucet.s.sol`.
